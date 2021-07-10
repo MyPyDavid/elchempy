@@ -1,0 +1,302 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Dec  1 10:58:59 2020
+
+@author: zmg
+"""
+import numpy as np
+from lmfit import Model
+from lmfit.models import ExpressionModel
+import inspect
+import sys
+from pathlib import Path
+import matplotlib.pyplot as plt
+
+# import pandas as pd
+
+
+if __name__ == "__main__":
+    # from eis_run_ovv import EIS_Spectrum
+    from repos.imppy.impedance.models.circuits import CustomCircuit, buildCircuit
+    from repos.imppy.impedance.models.circuits.elements import (
+        R,
+        C,
+        CPE,
+        W,
+        Wo,
+        Ws,
+        circuit_elements,
+    )
+#    from ECpy.experiments.EIS.repos.imppy.impedance.circ import validation as imppy_validation
+elif (
+    Path(__file__).parent.name == "EIS"
+    and __name__.split(".")[-1].split("_")[-1] == "model"
+):
+    from repos.imppy.impedance.models.circuits import CustomCircuit, buildCircuit
+elif __name__.startswith("ECpy"):
+    from ECpy.experiments.EIS.repos.imppy.impedance.models.circuits import (
+        CustomCircuit,
+        buildCircuit,
+    )
+
+else:
+    from experiments.EIS.repos.imppy.impedance.models.circuits import (
+        CustomCircuit,
+        buildCircuit,
+    )
+
+    # from repos.imppy.impedance.models.circuits import CustomCircuit
+
+EvRHE = "E_AppV_RHE"
+
+
+def get_element_from_name(name):
+    excluded_chars = "0123456789_"
+    return "".join(char for char in name if char not in excluded_chars)
+
+
+inspect.getmembers(sys.modules[__name__], inspect.isclass)
+
+#
+#    def __repr__(self):
+#        return self.name
+#    def __str__(self):
+#        return self.name
+
+
+class ParseCircuitExpression:
+
+    test = "R0-p(R1,p(R3-CPE1)-W0)-p(R2,CPE2-W1)-L0"
+
+    def __init__(self, circuit_str):
+        self.circuit_str = circuit_str
+
+    def _check_series(self):
+        enumt = enumerate(self.circuit_str)
+        dash = [(n, i) for n, i in enumerate(self.circuit_str) if i == "-"]
+        _open = [(n, i) for n, i in enumerate(self.circuit_str) if i == "("]
+        _close = [(n, i) for n, i in enumerate(self.circuit_str) if i == ")"]
+        dash_out = [
+            n
+            for n, i in dash
+            if not any(c[0][0] < n < c[1][0] for c in list(zip(_open, _close)))
+        ]
+        dash_in = [i[0] for i in dash if i[0] not in dash_out]
+        t_series = "".join(
+            [t if n not in dash_out else " + " for n, t in enumerate(self.circuit_str)]
+        )
+        self.series_split = t_series.split(" + ")
+
+    def _check_elements(self):
+
+        for ser_elem in self.series_split:
+            ser_elem
+            # if
+
+
+def _check_series(circuit_str):
+    enumt = enumerate(circuit_str)
+    dash = [(n, i) for n, i in enumerate(circuit_str) if i == "-"]
+    _open = [(n, i) for n, i in enumerate(circuit_str) if i == "("]
+    _close = [(n, i) for n, i in enumerate(circuit_str) if i == ")"]
+    dash_out = [
+        n
+        for n, i in dash
+        if not any(c[0][0] < n < c[1][0] for c in list(zip(_open, _close)))
+    ]
+    dash_in = [i[0] for i in dash if i[0] not in dash_out]
+    t_series = "".join(
+        [t if n not in dash_out else " + " for n, t in enumerate(circuit_str)]
+    )
+    p_split = t_series.split(" + ")
+    return p_split
+
+
+def test_parsers():
+    t = "R0-p(R1,p(R3-CPE1)-W0)-p(R2,CPE2-W1)-L0"
+    # enumt = enumerate(t)
+    # dash = [(n,i) for n,i in enumerate(t) if i == '-']
+    # _open = [(n,i) for n,i in enumerate(t) if i == '(']
+    # _close = [(n,i) for n,i in enumerate(t) if i == ')']
+    # dash_out = [n for n,i in dash if not any( c[0][0] < n < c[1][0] for c in list(zip(_open,_close))) ]
+    # dash_in = [i[0] for i in dash if i[0] not in dash_out]
+    # t_series = ''.join([t if n not in dash_out else ' + ' for n,t in enumerate(t)])
+    # p_split= t_series.split(' + ')
+    # _nws = ''
+    # len(p_split)
+    p_split = _check_series(t)
+    for i in _check_series(t):
+        print(_check_series(i))
+
+        if not i.startswith("p(") and not i.endswith(")"):
+            _nws += f"{i} + "
+        elif i.startswith("p("):
+            for pi in i.split(","):
+                if i.startswith("p("):
+                    pass
+                    pi  # TODO continue parsers
+
+
+def buildCircuit(circuit, frequency_str="ang", eval_string="", index=0):
+    # frequencies, *parameters,, constants={}
+    """recursive function that transforms a circuit, parameters, and
+    frequencies into a string that can be evaluated
+
+    Parameters
+    ----------
+    circuit: str
+    frequency_str: str
+    # parameters: list/tuple/array of floats
+    # constants: dict
+
+    Returns
+    -------
+    eval_string: str
+        Python expression for calculating the resulting fit
+    index: int
+        Tracks parameter index through recursive calling of the function
+    """
+
+    # parameters = np.array(parameters).tolist()
+    # frequencies = np.array(frequencies).tolist()
+    circuit = circuit.replace(" ", "")
+
+    def parse_circuit(circuit, parallel=False, series=False):
+        """Splits a circuit string by either dashes (series) or commas
+        (parallel) outside of any paranthesis. Removes any leading 'p('
+        or trailing ')' when in parallel mode"""
+
+        assert parallel != series, "Exactly one of parallel or series must be True"
+
+        def count_parens(string):
+            return string.count("("), string.count(")")
+
+        if parallel:
+            special = ","
+            if circuit.endswith(")") and circuit.startswith("p("):
+                circuit = circuit[2:-1]
+        if series:
+            special = "-"
+
+        split = circuit.split(special)
+
+        result = []
+        skipped = []
+        for i, sub_str in enumerate(split):
+            if i not in skipped:
+                if "(" not in sub_str and ")" not in sub_str:
+                    result.append(sub_str)
+                else:
+                    open_parens, closed_parens = count_parens(sub_str)
+                    if open_parens == closed_parens:
+                        result.append(sub_str)
+                    else:
+                        uneven = True
+                        while i < len(split) - 1 and uneven:
+                            sub_str += special + split[i + 1]
+
+                            open_parens, closed_parens = count_parens(sub_str)
+                            uneven = open_parens != closed_parens
+
+                            i += 1
+                            skipped.append(i)
+                        result.append(sub_str)
+        return result
+
+    parallel = parse_circuit(circuit, parallel=True)
+    series = parse_circuit(circuit, series=True)
+
+    if series is not None and len(series) > 1:
+        eval_string += "s(["
+        split = series
+    elif parallel is not None and len(parallel) > 1:
+        eval_string += "p(["
+        split = parallel
+    elif series == parallel:
+        eval_string += "(["
+        split = series
+
+    for i, elem in enumerate(split):
+        if "," in elem or "-" in elem:
+
+            eval_string, index = buildCircuit(
+                elem, frequency_str, eval_string=eval_string, index=index
+            )
+        else:
+            param_string = ""
+            raw_elem = get_element_from_name(elem)
+            elem_number = check_and_eval(raw_elem).num_params
+            param_list = []
+            for j in range(elem_number):
+                if elem_number > 1:
+                    current_elem = elem + "_{}".format(j)
+                else:
+                    current_elem = elem
+
+                param_list.append(current_elem)
+                # if current_elem in constants.keys():
+                #     param_list.append(constants[current_elem])
+                # else:
+                #     param_list.append(parameters[index])
+                #     index += 1
+
+            param_string += str(param_list)
+            new = raw_elem + "(" + param_string + "," + frequency_str + ")"
+            eval_string += new
+
+        if i == len(split) - 1:
+            eval_string += "])"
+        else:
+            eval_string += ","
+
+    return eval_string, index
+
+
+def extract_circuit_elements(circuit):
+    p_string = [x for x in circuit if x not in "p(),-"]
+    extracted_elements = []
+    current_element = []
+    length = len(p_string)
+    for i, char in enumerate(p_string):
+        if char not in ints:
+            current_element.append(char)
+        else:
+            # min to prevent looking ahead past end of list
+            if p_string[min(i + 1, length - 1)] not in ints:
+                current_element.append(char)
+                extracted_elements.append("".join(current_element))
+                current_element = []
+            else:
+                current_element.append(char)
+    extracted_elements.append("".join(current_element))
+    return extracted_elements
+
+
+def calculateCircuitLength(circuit):
+    length = 0
+    if circuit:
+        extracted_elements = extract_circuit_elements(circuit)
+        for elem in extracted_elements:
+            raw_element = get_element_from_name(elem)
+            num_params = check_and_eval(raw_element)
+            # .num_params
+            length += num_params
+    return length
+
+
+def check_and_eval(element):
+    allowed_elements = circuit_elements.keys()
+    if element not in allowed_elements:
+        raise ValueError(
+            f"{element} not in " + f"allowed elements ({allowed_elements})"
+        )
+    else:
+        return (
+            circuit_elements[element]
+            .__doc__.split("math::")[-1]
+            .replace(" ", "")
+            .replace("\n", "")
+            .split("where")[0]
+        )
+    # eval(element, circuit_elements)

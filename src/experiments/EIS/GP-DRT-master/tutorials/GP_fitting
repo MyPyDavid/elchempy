@@ -1,0 +1,361 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed May  6 10:50:59 2020
+
+@author: zmg
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from math import sin, cos, pi
+import os
+from pathlib import Path
+
+from scipy.optimize import minimize
+import pandas as pd
+import GP_DRT
+
+
+def reduce_Z_data(EIS_data_KKvalid):
+    try:
+        EIS_data_KKvalid = EIS_data_KKvalid.sort_values("Frequency(Hz)", ascending=True)
+        R_ohm = abs(EIS_data_KKvalid.DATA_Z).min()
+        w_min = EIS_data_KKvalid["Angular"].min()
+        Zim_min = EIS_data_KKvalid.loc[
+            EIS_data_KKvalid["Angular"] == w_min, "DATA_Z"
+        ].values.imag
+        C_sub = 1 / (w_min * Zim_min)
+
+        #     (1j*fmin*1E-3)**-1
+        EIS_data_KKvalid["DATA_Z_reduce"] = (
+            EIS_data_KKvalid.DATA_Z
+            - R_ohm
+            + (1j * EIS_data_KKvalid.Angular * C_sub) ** -1
+        )
+        EIS_data_KKvalid["DATA_Z_reduce_real"] = EIS_data_KKvalid[
+            "DATA_Z_reduce"
+        ].values.real
+        EIS_data_KKvalid["DATA_Z_reduce_imag"] = (
+            -1 * EIS_data_KKvalid["DATA_Z_reduce"].values.imag
+        )
+    except Exception as e:
+        print(e)
+
+    return EIS_data_KKvalid
+
+
+def read_xl(xlfile):
+    df = pd.read_excel(xlfile, index_col=[0]).sort_values(
+        "Frequency(Hz)", ascending=True
+    )
+    if "Model_EEC" in df.columns:
+        mgrp = df.groupby("Model_EEC")
+
+        getgrp = (
+            "Model(Singh2015_RQRQR)"
+            if "Model(Singh2015_RQRQR)" in mgrp.groups.keys()
+            else list(mgrp.groups.keys())[0]
+        )
+        spec = mgrp.get_group(getgrp)
+    #                              mgrp.groups
+    else:
+        spec = df
+    complex_cols = [
+        i for i in spec.columns if "+" and "j" in str(spec.head(1)[i].iloc[0])
+    ]
+    #    spec[complex_cols] =
+    spec = spec.assign(
+        **{col: spec[col].apply(lambda x: np.complex(x)) for col in complex_cols}
+    )
+    #    spec[complex_cols].applymap(lambda x: np.complex(x))
+    return spec
+
+
+def add_EIS_data(spec):
+    plt.rc("text", usetex=False)
+    #    spec['Zcm2'] = spec['DATA_Z']*0.238
+    #    plt.plot(np.real(spec['Zcm2'] ), -np.imag(spec['Zcm2']), "o", markersize=10, color="black", label="synth exp")
+    spec.plot(x="DATA_Zre" * 0.238, y="DATA_-Zim")
+    spec.plot(x="DATA_Z_reduce_real", y="DATA_Z_reduce_imag")
+    N_freqs = len(spec)
+    Z_exp = spec.DATA_Z.values
+    return N_freqs, Z_exp
+
+
+def read_eis_excel():
+    xl_files = list(Path.cwd().parent.parent.rglob("testing_data/*xlsx"))
+    all_data = {
+        a.stem: {"Filepath": a, "spectrum": reduce_Z_data(read_xl(a))} for a in xl_files
+    }
+    specs = [i["spectrum"] for i in all_data.values()]
+    return all_data
+
+
+def choose_test(
+    all_test_data,
+    name="O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20",
+    reduce=False,
+):
+    all_test_data = read_eis_excel()
+    spec = all_test_data.get(
+        "O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20"
+    )["spectrum"]
+    N_freqs = len(spec)
+    Z_exp = spec.DATA_Z.values
+    if reduce:
+        Z_exp = spec.DATA_Z_reduce.values
+    return spec["Frequency(Hz)"].values, Z_exp
+
+
+def standard_DRT(N_freqs=81):
+    #    N_freqs = 81
+    freq_vec = np.logspace(-4.0, 4.0, num=N_freqs, endpoint=True)
+    tau_vec = 1.0 / freq_vec
+    # define parameters for ZARC model and calculate the impedance and gamma following the above equations
+    R_inf = 10
+    R_ct = 10
+    phi = 0.8
+    tau_0 = 0.1
+    C = tau_0 ** phi / R_ct
+    tau_2, R_2 = 5, 20
+    C_2 = tau_2 ** phi / R_2
+    C_3 = 1e-06
+    # exact Z and gamma
+    Z = (
+        R_inf
+        + 1.0 / (1.0 / R_ct + C * (1j * 2.0 * pi * freq_vec) ** phi)
+        + 1.0 / (1.0 / R_2 + C_2 * (1j * 2.0 * pi * freq_vec) ** 0.8)
+    )
+    gamma_exact = (
+        (R_ct)
+        / (2.0 * pi)
+        * sin((1.0 - phi) * pi)
+        / (np.cosh(phi * np.log(tau_vec / tau_0)) - cos((1.0 - phi) * pi))
+    )
+
+    # adding noise to the impedance data
+    sigma_n_exp = 0.01
+    Z_exp = Z + sigma_n_exp * (
+        np.random.normal(0, 1, N_freqs) + 1j * np.random.normal(0, 1, N_freqs)
+    )
+    #    plt.plot(np.real(Z_exp), -np.imag(Z_exp), "o", markersize=10, color="black", label="synth exp")
+    return Z_exp, gamma_exact
+
+
+all_test_data = read_eis_excel()
+
+
+def preparing_Z():
+    #    Z_data = pd.read_csv('EIS_experiment.csv')
+    freq_vec, Z_exp = choose_test(all_test_data, reduce=False)
+    #    freq_vec, Z_exp = Z_data['freq'].values, Z_data['Z_real'].values+1j*Z_data['Z_imag'].values
+
+    # define the frequency range
+    N_freqs = len(freq_vec)
+    xi_vec = np.log(freq_vec)
+    tau = 1 / freq_vec
+
+    # define the frequency range used for prediction, we choose a wider range to better display the DRT
+    freq_vec_star = np.logspace(-4.0, 6.0, num=101, endpoint=True)
+    xi_vec_star = np.log(freq_vec_star)
+
+    # finer mesh for plotting only
+    freq_vec_plot = np.logspace(-4.0, 6.0, num=1001, endpoint=True)
+
+    # initial parameters parameter to maximize the marginal log-likelihood as shown in eq (31)
+    sigma_n = 1e-03
+    sigma_f = 1e-02
+    ell = 1.0
+
+    theta_0 = np.array([sigma_n, sigma_f, ell])
+    seq_theta = np.copy(theta_0)
+
+    def print_results(theta):
+        global seq_theta
+        seq_theta = np.vstack((seq_theta, theta))
+        print("{0:.7f}  {1:.7f}  {2:.7f}".format(theta[0], theta[1], theta[2]))
+
+    GP_DRT.NMLL_fct(theta_0, Z_exp, xi_vec)
+    GP_DRT.grad_NMLL_fct(theta_0, Z_exp, xi_vec)
+    print("sigma_n,   sigma_f,   ell")
+
+    # minimize the NMLL $L(\theta)$ w.r.t sigma_n, sigma_f, ell using the BFGS method as implemented in scipy
+    res = minimize(
+        GP_DRT.NMLL_fct,
+        theta_0,
+        args=(Z_exp, xi_vec),
+        method="BFGS",
+        jac=GP_DRT.grad_NMLL_fct,
+        callback=print_results,
+        options={"disp": True},
+    )
+
+    # collect the optimized parameters
+    sigma_n, sigma_f, ell = res.x
+
+    # calculate the matrices shown in eq (18)
+    K = GP_DRT.matrix_K(xi_vec, xi_vec, sigma_f, ell)
+    L_im_K = GP_DRT.matrix_L_im_K(xi_vec, xi_vec, sigma_f, ell)
+    L2_im_K = GP_DRT.matrix_L2_im_K(xi_vec, xi_vec, sigma_f, ell)
+    Sigma = (sigma_n ** 2) * np.eye(N_freqs)
+
+    # the matrix $\mathcal L^2_{\rm im} \mathbf K + \sigma_n^2 \mathbf I$ whose inverse is needed
+    K_im_full = L2_im_K + Sigma
+
+    # Cholesky factorization, L is a lower-triangular matrix
+    L = np.linalg.cholesky(K_im_full)
+
+    # solve for alpha
+    alpha = np.linalg.solve(L, Z_exp.imag)
+    alpha = np.linalg.solve(L.T, alpha)
+
+    # estimate the gamma of eq (21a), the minus sign, which is not included in L_im_K, refers to eq (65)
+    gamma_fct_est = -np.dot(L_im_K.T, alpha)
+
+    # covariance matrix
+    inv_L = np.linalg.inv(L)
+    inv_K_im_full = np.dot(inv_L.T, inv_L)
+
+    # estimate the sigma of gamma for eq (21b)
+    cov_gamma_fct_est = K - np.dot(L_im_K.T, np.dot(inv_K_im_full, L_im_K))
+    sigma_gamma_fct_est = np.sqrt(np.diag(cov_gamma_fct_est))
+
+    # initialize the imaginary part of impedance vector
+    Z_im_vec_star = np.empty_like(xi_vec_star)
+    Sigma_Z_im_vec_star = np.empty_like(xi_vec_star)
+
+    gamma_vec_star = np.empty_like(xi_vec_star)
+    Sigma_gamma_vec_star = np.empty_like(xi_vec_star)
+
+    # calculate the imaginary part of impedance at each $\xi$ point for the plot
+    for index, val in enumerate(xi_vec_star):
+        xi_star = np.array([val])
+
+        # compute matrices shown in eq (18), k_star corresponds to a new point
+        k_star = GP_DRT.matrix_K(xi_vec, xi_star, sigma_f, ell)
+        L_im_k_star = GP_DRT.matrix_L_im_K(xi_vec, xi_star, sigma_f, ell)
+        L2_im_k_star = GP_DRT.matrix_L2_im_K(xi_vec, xi_star, sigma_f, ell)
+        k_star_star = GP_DRT.matrix_K(xi_star, xi_star, sigma_f, ell)
+        L_im_k_star_star = GP_DRT.matrix_L_im_K(xi_star, xi_star, sigma_f, ell)
+        L2_im_k_star_star = GP_DRT.matrix_L2_im_K(xi_star, xi_star, sigma_f, ell)
+
+        # compute Z_im_star mean and standard deviation using eq (26)
+        Z_im_vec_star[index] = np.dot(L2_im_k_star.T, np.dot(inv_K_im_full, Z_exp.imag))
+        Sigma_Z_im_vec_star[index] = L2_im_k_star_star - np.dot(
+            L2_im_k_star.T, np.dot(inv_K_im_full, L2_im_k_star)
+        )
+
+        # compute Z_im_star mean and standard deviation
+        gamma_vec_star[index] = -np.dot(
+            L_im_k_star.T, np.dot(inv_K_im_full, Z_exp.imag)
+        )
+        Sigma_gamma_vec_star[index] = k_star_star - np.dot(
+            L_im_k_star.T, np.dot(inv_K_im_full, L_im_k_star)
+        )
+
+    plot_nyquist(Z_exp)
+    plot_GP_DRT()
+    plot_imag()
+
+
+def plot_nyquist(Z_exp):
+    # Nyquist plot of the EIS spectrum
+    plt.plot(
+        np.real(Z_exp),
+        -np.imag(Z_exp),
+        "o",
+        markersize=10,
+        fillstyle="none",
+        color="red",
+        label="experiment",
+    )
+    plt.plot(
+        np.real(Z_exp[1:-10:10]),
+        -np.imag(Z_exp[1:-10:10]),
+        "o",
+        markersize=10,
+        color="black",
+    )
+
+    plt.rc("text", usetex=False)
+    plt.rc("font", family="serif", size=15)
+    plt.rc("xtick", labelsize=15)
+    plt.rc("ytick", labelsize=15)
+    plt.legend(frameon=False, fontsize=15)
+    plt.axis("scaled")
+
+    # this depends on the data used - if you wish to use your own data you may need to modify this
+
+    plt.xlim(0, Z_exp.max().real)
+    plt.ylim(-0.001, Z_exp.max().real)
+    #    plt.xticks(np.arange(1.42, 1.521, 0.02))
+    #    plt.yticks(np.arange(0.00, 0.051, 0.01))
+    plt.gca().set_aspect("equal", adjustable="box")
+    plt.xlabel(r"$Z_{\rm re}/\Omega$", fontsize=20)
+    plt.ylabel(r"$-Z_{\rm im}/\Omega$", fontsize=20)
+
+    # label the frequencies - if you wish to use your own data you may need to modify this
+    label_index = range(1, len(Z_exp) - 10, 10)
+    move = [[-5, 30], [-5, 50], [-5, 100], [-100, 100]]
+    for k, ind in enumerate(label_index):
+        power = int(np.log10(freq_vec[ind]))
+        num = freq_vec[ind] / (10 ** (power))
+        plt.annotate(
+            f"{freq_vec[ind]:.2G}",
+            xy=(np.real(Z_exp[ind]), -np.imag(Z_exp[ind])),
+            xytext=(np.real(Z_exp[ind]) + move[k][0], move[k][1] - np.imag(Z_exp[ind])),
+            arrowprops=dict(arrowstyle="-", connectionstyle="arc"),
+        )
+    #        .format(num, power)
+    plt.show()
+
+
+def plot_GP_DRT():
+    # plot the DRT and its confidence region
+    plt.semilogx(
+        freq_vec_star, gamma_vec_star, linewidth=4, color="red", label="GP-DRT"
+    )
+    plt.fill_between(
+        freq_vec_star,
+        gamma_vec_star - 3 * np.sqrt(abs(Sigma_gamma_vec_star)),
+        gamma_vec_star + 3 * np.sqrt(abs(Sigma_gamma_vec_star)),
+        color="0.4",
+        alpha=0.3,
+    )
+    plt.rc("text", usetex=False)
+    plt.rc("font", family="serif", size=15)
+    plt.rc("xtick", labelsize=15)
+    plt.rc("ytick", labelsize=15)
+    #    plt.axis([1E-4,1E6,-0.01,50])
+    plt.autoscale(True)
+    #    plt.yticks(np.arange(-0.01, 0.025, 0.01))
+    plt.legend(frameon=False, fontsize=15)
+    plt.xlabel(r"$f/{\rm Hz}$", fontsize=20)
+    plt.ylabel(r"$\gamma/\Omega$", fontsize=20)
+    plt.show()
+
+
+def plot_imag():
+    plt.semilogx(
+        freq_vec, -Z_exp.imag, "o", markersize=10, color="black", label="synth exp"
+    )
+    plt.semilogx(
+        freq_vec_star, -Z_im_vec_star, linewidth=4, color="red", label="GP-DRT"
+    )
+    plt.fill_between(
+        freq_vec_star,
+        -Z_im_vec_star - 3 * np.sqrt(abs(Sigma_Z_im_vec_star)),
+        -Z_im_vec_star + 3 * np.sqrt(abs(Sigma_Z_im_vec_star)),
+        alpha=0.3,
+    )
+    plt.rc("text", usetex=False)
+    plt.rc("font", family="serif", size=15)
+    plt.rc("xtick", labelsize=15)
+    plt.rc("ytick", labelsize=15)
+    plt.autoscale(True)
+    #    plt.axis([1E-3,1E5,Z_im_vec_star.min(),Z_im_vec_star.max()])
+    plt.legend(frameon=False, fontsize=15)
+    plt.xlabel(r"$f/{\rm Hz}$", fontsize=20)
+    plt.ylabel(r"$-Z_{\rm im}/\Omega$", fontsize=20)
+    plt.show()
