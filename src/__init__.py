@@ -13,6 +13,7 @@ from config import config
 
 __package_name__ = "ECpy"
 
+
 class FindExpFolder:
     """Mock in place class to maintain logging functionality"""
 
@@ -27,7 +28,8 @@ _format = "%(asctime)s : %(levelname)s : %(name)s : [%(lineno)d] %(message)s"
 try:
     import file_py_helper
     from file_py_helper.find_folders import FindExpFolder
-    EXP_FOLDER = FindExpFolder('VERSASTAT')
+
+    EXP_FOLDER = FindExpFolder("VERSASTAT")
 
 except ImportError:
     _format = _format + " : importerror : "
@@ -47,9 +49,7 @@ logger.setLevel(logging.DEBUG)
 
 # create file handler which logs even debug messages
 # define file handler and set formatter
-fh = logging.FileHandler(
-    EXP_FOLDER.DestDir.joinpath("PAR_DW_logfile.log")
-)
+fh = logging.FileHandler(EXP_FOLDER.DestDir.joinpath("PAR_DW_logfile.log"))
 # fh = logging.FileHandler('spam.log')
 fh.setLevel(logging.DEBUG)
 # create console handler with a higher log level

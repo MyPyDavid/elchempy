@@ -4,7 +4,6 @@ of the jkin calculation
 """
 
 
-
 def _debug():
     fit_run_arg = orr_run_args[1]
 
@@ -20,62 +19,61 @@ def Jkin_calc_multi(fit_run_arg, **ORR_kwargs):
         )
 
 
-
 def _rest():
-        ORR_operations(self, O2_disk_seg, N2_BG)
+    ORR_operations(self, O2_disk_seg, N2_BG)
 
-        ORR_operations(self, O2_disk_seg, N2_BG)
+    ORR_operations(self, O2_disk_seg, N2_BG)
 
-        O2_join_raw, _N2BG_pars = ORR_operations.merge_O2_with_N2_BG(
-            O2_disk_seg, N2_BG, self.mA
-        )
-        O2_join = ORR_operations.add_mean_Jcorr_col(O2_join_raw)
+    O2_join_raw, _N2BG_pars = ORR_operations.merge_O2_with_N2_BG(
+        O2_disk_seg, N2_BG, self.mA
+    )
+    O2_join = ORR_operations.add_mean_Jcorr_col(O2_join_raw)
 
-        O2_join, ORR_disk_pars = ORR_operations.ORR_disk_calc_pars(
-            PAR_file,
-            ORR_dest_dir_file,
-            dest_file,
+    O2_join, ORR_disk_pars = ORR_operations.ORR_disk_calc_pars(
+        PAR_file,
+        ORR_dest_dir_file,
+        dest_file,
+        O2_join,
+        set_jcorr_col="Jcorr_minus_factor",
+    )
+    # TEST PLOTTING #
+    #            O2_join.groupby('Sweep_Type').plot(x=EvRHE,y=['Jcorr_raw','Jcorr_hor'])
+    ORR_disk_pars = ORR_disk_pars.assign(**_N2BG_pars).drop_duplicates()
+    #            (PAR_file,rpm_n, seg, ORR_dest_dir_file, dest_file, O2_join)
+    #                                'Analysis_date': datetime.now()}
+    try:
+        Iring_Chrono, _ORR_RRDE_pars = O2_Chrono(
+            seg,
+            rpm_n,
             O2_join,
-            set_jcorr_col="Jcorr_minus_factor",
-        )
-        # TEST PLOTTING #
-        #            O2_join.groupby('Sweep_Type').plot(x=EvRHE,y=['Jcorr_raw','Jcorr_hor'])
-        ORR_disk_pars = ORR_disk_pars.assign(**_N2BG_pars).drop_duplicates()
-        #            (PAR_file,rpm_n, seg, ORR_dest_dir_file, dest_file, O2_join)
-        #                                'Analysis_date': datetime.now()}
-        try:
-            Iring_Chrono, _ORR_RRDE_pars = O2_Chrono(
-                seg,
-                rpm_n,
-                O2_join,
-                O2_chrono_Ring,
-                ORR_dest_dir_file,
-                plot_BipotChrono=True,
-                export_excel=True,
-                ring_filter=True,
-            )
-        #                   'Jring_050': out_Jring, 'FracH2O2_050': out_FracH2O2})
-        except Exception as e:
-            _logger.error(
-                "Jkin calculation ERROR: Iring_Chrono {0}, {1}".format(e, dest_file)
-            )
-            Iring_Chrono, _ORR_RRDE_pars = pd.DataFrame(), pd.DataFrame()
-        ### +++++++++-   ++++++++++++++++++++++    -+++++++++++ ###
-        ### +++++++++- PLOTTING -+++++++++++ ###
-        # https://stackoverflow.com/questions/37737538/merge-matplotlib-subplots-with-shared-x-axis
-        #                fig, (axRing,axJ) = plt.subplots(2, sharex=True)
-        #                SegGr.loc[:,[x]+y].to_csv(ORR_dest_dir.joinpath(Path(f).stem+'_%s'%rpm+'.csv'))
-        #                                gr.plot(x=x,y=y,xlim=(0,1.2),ylim=(-6,0.5),title=Path(f).stem)
-        #                                plt.savefig(ORR_dest_dir.joinath(Path(f).stem)+'_O2.png',bbox_inches='tight')
-        #                                plt.close()
-        ORR_plot_ring_disk(
-            O2_join,
-            ORR_disk_pars,
-            Iring_Chrono,
-            _ORR_RRDE_pars,
+            O2_chrono_Ring,
             ORR_dest_dir_file,
-            dest_file,
+            plot_BipotChrono=True,
+            export_excel=True,
+            ring_filter=True,
         )
+    #                   'Jring_050': out_Jring, 'FracH2O2_050': out_FracH2O2})
+    except Exception as e:
+        _logger.error(
+            "Jkin calculation ERROR: Iring_Chrono {0}, {1}".format(e, dest_file)
+        )
+        Iring_Chrono, _ORR_RRDE_pars = pd.DataFrame(), pd.DataFrame()
+    ### +++++++++-   ++++++++++++++++++++++    -+++++++++++ ###
+    ### +++++++++- PLOTTING -+++++++++++ ###
+    # https://stackoverflow.com/questions/37737538/merge-matplotlib-subplots-with-shared-x-axis
+    #                fig, (axRing,axJ) = plt.subplots(2, sharex=True)
+    #                SegGr.loc[:,[x]+y].to_csv(ORR_dest_dir.joinpath(Path(f).stem+'_%s'%rpm+'.csv'))
+    #                                gr.plot(x=x,y=y,xlim=(0,1.2),ylim=(-6,0.5),title=Path(f).stem)
+    #                                plt.savefig(ORR_dest_dir.joinath(Path(f).stem)+'_O2.png',bbox_inches='tight')
+    #                                plt.close()
+    ORR_plot_ring_disk(
+        O2_join,
+        ORR_disk_pars,
+        Iring_Chrono,
+        _ORR_RRDE_pars,
+        ORR_dest_dir_file,
+        dest_file,
+    )
 
 
 #             usecols_N2_correction = 'lin_jmA_lincorr'
@@ -110,7 +108,6 @@ def _testing_function():
     kl = ORR_KL_loop(calc, run_loop=True)
     self = kl
     self = ORR_ops
-
 
 
 def Jkin_calculations(fit_run_arg, rpm_list, **ORR_kwargs):

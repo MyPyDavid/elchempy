@@ -11,7 +11,6 @@ from pathlib import Path
 from datetime import datetime
 
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -23,6 +22,7 @@ try:
     import SampleSelection
 except ModuleNotFoundError:
     SampleSelection = lambda x: x
+
 
 class PlotAnalysis:
     """Some properties of electrochemical experiments collected and reference values"""
@@ -974,7 +974,7 @@ class eisplot:
         plt.show()
         plt.close()
 
-    def PlotParsEIS(AllData_E_file, EISovv, SampleCode, DestFile,xEIS='Y', yEIS="Rct"):
+    def PlotParsEIS(AllData_E_file, EISovv, SampleCode, DestFile, xEIS="Y", yEIS="Rct"):
         #    maxLim = (AllData_E_file[['DATA_Yim','DATA_Yre']].max()).max()
         #%%
         EvRHE = "E_AppV_RHE"
@@ -1059,7 +1059,6 @@ class eisplot:
         #%%
         plt.savefig(DestFile, bbox_inches="tight", dpi=200)
         plt.close()
-
 
     def PlotCombinedEIS(
         AllData_E_file_spectras, EISovv, SampleCode, DestFile, xEIS="Y"
@@ -1204,15 +1203,15 @@ class eisplot:
 
     def EIS_plotting_combined(PlotCombinedEIS):
         #%% ===== MAKE SPECIAL STACKED PLOTS ======
-        #PostDestDir = FileHelper.FindExpFolder("VERSASTAT").DestDir.joinpath("PostEC")
-        #postOVVout = PostEC.LoadPostOVV()
-        PostDestDir =''
+        # PostDestDir = FileHelper.FindExpFolder("VERSASTAT").DestDir.joinpath("PostEC")
+        # postOVVout = PostEC.LoadPostOVV()
+        PostDestDir = ""
         postOVVout = None
         # FIX ME
         postEIScom = postOVVout.loc[
             postOVVout["Type_Exp"] == "EIS_Combined"
         ].drop_duplicates()
-        SampleCodes = 'find_codes'
+        SampleCodes = "find_codes"
 
         #    SampleCodes  = pd.read_excel(PostDestDir.joinpath('SampleCodeLst.xlsx'))
         PostDestDirEIScom = PostDestDir.joinpath("EIS_Combined")

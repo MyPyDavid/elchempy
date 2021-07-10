@@ -23,4 +23,3 @@ max-line-length = 88
 extend-ignore = E203
 per-file-ignores =
     #src/PostEC/PAR_postEC_v6_old.py
-

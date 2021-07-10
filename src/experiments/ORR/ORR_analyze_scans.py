@@ -243,7 +243,7 @@ def ORR_extract_pars(ORR_N2_corrected, **kwargs):
     return output_pars
 
 
-def tesplot(): # noqa: F821
+def tesplot():  # noqa: F821
     O2_join.loc[(O2_join[EvRHE] < 0.75) & (O2_join[EvRHE] > 0.4)].plot(
         x="Jkin_min",
         y="Frac_H2O2",
@@ -265,7 +265,7 @@ class ORR_Tafel:
     def __init__():
         pass
 
-    def export():# noqa : F821
+    def export():  # noqa : F821
         ORR_dest_dir.joinpath("TAFEL")
         TafelDir.mkdir(parents=True, exist_ok=True)
 
@@ -738,7 +738,7 @@ class ORR_calculations:
 
     def compare_cap(self):
 
-        if hasattr(self, 'ORR_check_cap') and hasattr(self, 'N2_check_cap'):
+        if hasattr(self, "ORR_check_cap") and hasattr(self, "N2_check_cap"):
             _ORR_cap_agg = self.ORR_check_cap.groupby("name").agg("val").mean()
             _N2_diff_lst = [
                 gr.assign(
@@ -764,8 +764,6 @@ class ORR_calculations:
                     seg, O2_disk_seg
 
                     yield self, O2_disk_seg, N2_BG, N2_cols
-
-
 
 
 class ORR_KL_loop:
@@ -1393,6 +1391,7 @@ class ORR_operations:
 #         _ORR_parslst.append(O2_ParsOut )
 #         ORR_KL_data_rpm = ORR_select_KL_data(O2_CalcOut)
 #         _KL_data_all_rpms.append(ORR_KL_data_rpm)
+
 
 def ORR_read_Ring_file(gr_ovv, ORR_ovv_file):
     #                       PAR_file, fstem, ORR_file_PAR_date):

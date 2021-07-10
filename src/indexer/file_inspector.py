@@ -94,7 +94,11 @@ class PAR_file_parser:
             except Exception as e:
                 errm = f"not valid filepath: {self.PARf}\n because: {e}"
                 self.parse_result.update(
-                    {"PAR_file": self.PARf, "_parser_fail": True, "_parser_message": errm}
+                    {
+                        "PAR_file": self.PARf,
+                        "_parser_fail": True,
+                        "_parser_message": errm,
+                    }
                 )
         self.parse_result.update({"PAR_file": self.PARf, "basename": self.PARf.stem})
 
@@ -322,7 +326,7 @@ class PAR_file_introspector:
         if self.PAR_soup != "error":
             self.read_segments()
 
-    def _get_match_PAR_EXP_date(self, exp_date,PAR_date):
+    def _get_match_PAR_EXP_date(self, exp_date, PAR_date):
         try:
             if exp_date.date() == PAR_date.date():
                 exp_DATE_match = "yes"

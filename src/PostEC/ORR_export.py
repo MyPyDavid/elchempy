@@ -22,14 +22,14 @@ from file_py_helper.file_functions import FileOperations
 from file_py_helper.FindSampleID import GetSampleID
 
 from file_py_helper.PostChar import (
-        SampleSelection,
-        Characterization_TypeSetting,
-        SampleCodesChar,
-    )
-
+    SampleSelection,
+    Characterization_TypeSetting,
+    SampleCodesChar,
+)
 
 
 from .collect_load import Load_from_Indexes
+
 EC_index, SampleCodes = Load_from_Indexes.get_EC_index()
 
 from ..experiments.ORR import ORR_analyze_scans
@@ -37,10 +37,10 @@ from ..experiments.ORR import ORR_analyze_scans
 OriginColor = FindExpFolder().LoadOriginColor()
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 from . import EvRHE, EXP_FOLDER
-
 
 
 def make_subdir(DD):
@@ -644,7 +644,7 @@ class ExportfromORR:
         It seems that log(Jkin) follows upward trend with loading.  TSa, F"""
 
     #%%
-    def ORR_paper(ORR_pars,ORR_CB_paper): # FIX ME
+    def ORR_paper(ORR_pars, ORR_CB_paper):  # FIX ME
         """Parameters of all measurements are plotted together and a linear fit is done that show for ('Jkin' with 'E_onset') specifically
         figures are saved."""
         PDD_ORR = FindExpFolder("VERSASTAT").DestDir.joinpath(
@@ -668,9 +668,7 @@ class ExportfromORR:
                 & (ORR_pars.SampleID.isin(SampleCodes.SampleID))
             ]
             for Sern, Sergr in ORR_test.groupby("SeriesID"):
-                mkset = Characterization_TypeSetting.Series_Colors(Sern)[
-                    "marker"
-                ]
+                mkset = Characterization_TypeSetting.Series_Colors(Sern)["marker"]
                 #                Sergr.plot(y=xtest,x='E_onset',kind='scatter',logy=logy_set, ax=ax, marker=mkset, markersize = 100)
                 ax.scatter(
                     Sergr["E_onset"], Sergr[xtest], marker=mkset, s=100, label=Sern
@@ -778,7 +776,7 @@ class ExportfromORR:
                 ax2.set_ylim(0, 10)
                 ax2.legend(loc="center left", bbox_to_anchor=(1.0, 0.5))
 
-    def ORR_plotting_parameters1(postOVVout): # FIXME
+    def ORR_plotting_parameters1(postOVVout):  # FIXME
         #%% ===== MAKE PLOTS of Parameters versus E v RHE ======
         #        OnlyRecentMissingOVV = run_PAR_DW.ECRunOVV(load=1).index
         ORR_pars = Load_from_Indexes.ORR_pars_OVV(
@@ -818,81 +816,82 @@ class ExportfromORR:
         ].query(SampleSelection.acid1500)
 
     def plot_triangle_hm(
-            grE,
-            rcorr,
-            Ev,
-            target_dir,
-            corr_method="pearson",
-            corr_cutoff=0.5,
-            plot_option=False,
-        ):
-            #            rcorr = dfcorr[corr_Cols].corr(method=corr_method)
-            heatmap_title = "EIS_heatmap_{0}_{1}_{2}.png".format(
-                corr_method, int(corr_cutoff * 100), Ev
-            )
-            print(heatmap_title)
-            selcorr = rcorr[(rcorr > corr_cutoff) | (rcorr < corr_cutoff)]
-            corr_triu = rcorr.where(np.tril(np.ones(rcorr.shape)).astype(np.bool))
-            scorr_triu = corr_triu.stack()
-            filter_corr = scorr_triu[
-                (scorr_triu.abs() > corr_cutoff) & (scorr_triu.abs() < 0.97)
-            ]
-            fcorr = filter_corr.unstack()
-            fcorr_sliced = fcorr.dropna(how="all")
+        grE,
+        rcorr,
+        Ev,
+        target_dir,
+        corr_method="pearson",
+        corr_cutoff=0.5,
+        plot_option=False,
+    ):
+        #            rcorr = dfcorr[corr_Cols].corr(method=corr_method)
+        heatmap_title = "EIS_heatmap_{0}_{1}_{2}.png".format(
+            corr_method, int(corr_cutoff * 100), Ev
+        )
+        print(heatmap_title)
+        selcorr = rcorr[(rcorr > corr_cutoff) | (rcorr < corr_cutoff)]
+        corr_triu = rcorr.where(np.tril(np.ones(rcorr.shape)).astype(np.bool))
+        scorr_triu = corr_triu.stack()
+        filter_corr = scorr_triu[
+            (scorr_triu.abs() > corr_cutoff) & (scorr_triu.abs() < 0.97)
+        ]
+        fcorr = filter_corr.unstack()
+        fcorr_sliced = fcorr.dropna(how="all")
 
-            if not fcorr_sliced.empty and plot_option is "heatmap":
-                plt.subplots(figsize=(40, 40))
-                sns.heatmap(fcorr_sliced)
-                #                heatmap_title = 'EIS_heatmap_{0}_{1}_{2}'.format(corr_method,int(corr_cutoff*100),EvRHE)
-                plt.suptitle(heatmap_title)
-                plt.savefig(
-                    target_dir.joinpath(heatmap_title), dpi=300, bbox_inches="tight"
-                )
-                plt.grid(True)
-                plt.close()
-            else:
+        if not fcorr_sliced.empty and plot_option is "heatmap":
+            plt.subplots(figsize=(40, 40))
+            sns.heatmap(fcorr_sliced)
+            #                heatmap_title = 'EIS_heatmap_{0}_{1}_{2}'.format(corr_method,int(corr_cutoff*100),EvRHE)
+            plt.suptitle(heatmap_title)
+            plt.savefig(
+                target_dir.joinpath(heatmap_title), dpi=300, bbox_inches="tight"
+            )
+            plt.grid(True)
+            plt.close()
+        else:
+            fcorr_sliced.loc[
+                fcorr_sliced.index.isin(SampleSelection.EC_EIS_par_cols + ["Qad+Cdlp"])
+            ]
+            drop_cols = ["Colorcode", "RedChisqr2", "RedChisqr1"]
+            drop_cols_set = [i for i in drop_cols if i in fcorr_sliced.columns]
+            promising = (
                 fcorr_sliced.loc[
                     fcorr_sliced.index.isin(
-                        SampleSelection.EC_EIS_par_cols + ["Qad+Cdlp"]
+                        SampleSelection.EC_EIS_par_cols[0:-2] + ["Qad+Cdlp"]
                     )
                 ]
-                drop_cols = ["Colorcode", "RedChisqr2", "RedChisqr1"]
-                drop_cols_set = [i for i in drop_cols if i in fcorr_sliced.columns]
-                promising = (
-                    fcorr_sliced.loc[
-                        fcorr_sliced.index.isin(
-                            SampleSelection.EC_EIS_par_cols[0:-2] + ["Qad+Cdlp"]
-                        )
-                    ]
-                    .drop(columns=drop_cols_set)
-                    .unstack()
-                    .dropna()
-                    .sort_values()
-                )
-                #                if not promising.loc[[('Rct','Rct_kin'),('Rct_kin','Rct')]].dropna().empty:
-                promising = promising.drop(
-                    index=[
-                        ("Rct", "Rct_kin"),
-                        ("Rct_kin", "Rct"),
-                        ("Cdlp", "Qad+Cdlp"),
-                        ("Cdlp", "Qad+Cdlp"),
-                        ("Qad", "Qad+Cdlp"),
-                        ("Qad+Cdlp", "Qad"),
-                    ],
-                    errors="ignore",
-                )
-                toptail = pd.concat([promising.tail(5), promising.head(5)])
-                PPDEIS_Ev = target_dir.joinpath(str(Ev))
-                PPDEIS_Ev.mkdir(parents=True, exist_ok=True)
-                def plot_pd_SampleIDs(*args):
-                    print('fix me')# FIXME
+                .drop(columns=drop_cols_set)
+                .unstack()
+                .dropna()
+                .sort_values()
+            )
+            #                if not promising.loc[[('Rct','Rct_kin'),('Rct_kin','Rct')]].dropna().empty:
+            promising = promising.drop(
+                index=[
+                    ("Rct", "Rct_kin"),
+                    ("Rct_kin", "Rct"),
+                    ("Cdlp", "Qad+Cdlp"),
+                    ("Cdlp", "Qad+Cdlp"),
+                    ("Qad", "Qad+Cdlp"),
+                    ("Qad+Cdlp", "Qad"),
+                ],
+                errors="ignore",
+            )
+            toptail = pd.concat([promising.tail(5), promising.head(5)])
+            PPDEIS_Ev = target_dir.joinpath(str(Ev))
+            PPDEIS_Ev.mkdir(parents=True, exist_ok=True)
 
-                if plot_option == "corr":
-                    for (xc, yc), corr_val in toptail.iteritems():
-                        plot_pd_SampleIDs(grE, xc, yc, corr_val, PPDEIS_Ev)
-                return promising
+            def plot_pd_SampleIDs(*args):
+                print("fix me")  # FIXME
 
-    def ORR_plotting_parameters2(plot_triangle_hm, EIS_O2_065_acid_no = pd.DataFrame()): # FIXME
+            if plot_option == "corr":
+                for (xc, yc), corr_val in toptail.iteritems():
+                    plot_pd_SampleIDs(grE, xc, yc, corr_val, PPDEIS_Ev)
+            return promising
+
+    def ORR_plotting_parameters2(
+        plot_triangle_hm, EIS_O2_065_acid_no=pd.DataFrame()
+    ):  # FIXME
         #%% ===== MAKE PLOTS of Parameters versus E v RHE ======
         PostDestDir = FindExpFolder("VERSASTAT").DestDir.joinpath("PostEC")
         PostDestDirEIScom = PostDestDir.joinpath("ORR_Pars_Char_CB_paper")
@@ -936,8 +935,7 @@ class ExportfromORR:
         )
         corr_method, corr_cutoff = "pearson", 0.5  # or default is pearson spearman
         #        rcorr = EIS_O2_065_acid_no[corr_Cols].corr(method=corr_method)
-        EIS_CB_paper = pd.DataFrame() # FIXME
-
+        EIS_CB_paper = pd.DataFrame()  # FIXME
 
         out_topcorrs_lst = []
         for Gas_set in Gases:
@@ -1017,4 +1015,3 @@ class ExportfromORR:
         sumbest_acid.groupby(level=[0, 1])
 
         #                rcorr = gr_sID_desc_Codes[SampleSelection.InterestingCols+SampleSelection.RAMAN_cols_corr].corr(method=corr_method)
-
