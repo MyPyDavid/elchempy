@@ -40,7 +40,6 @@ if __name__ == "__main__":
     #    from FileHelper.FindExpFolder import FindExpFolder
     from plotting import eisplot
 elif "prepare_input" in __name__:
-    import RunEC_classifier
     from FileHelper.FindSampleID import FindSampleID
 
 # from FileHelper.PostChar import SampleSelection, Characterization_TypeSetting

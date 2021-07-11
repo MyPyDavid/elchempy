@@ -1,10 +1,3 @@
-"""
-Created on Sun Jul 11 09:38:38 2021
-
-@author: DW
-"""
-
-
 def old_OER():
     #    print('OER RPM',1500)
     ###### ====== Exporting all Segments of Scans of .PAR files to OER subfolder ========== #######

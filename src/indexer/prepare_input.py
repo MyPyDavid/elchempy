@@ -34,50 +34,6 @@ import logging
 logger = logging.getLogger(__name__)
 #%%
 
-
-def RunEC(ExpDirs, EXP_FOLDER, mode=""):
-    for month, explst in ExpDirs:
-        alldirs = explst[::]
-        print(alldirs)
-        # === MODE DEPENDENT; Load previous made files ===
-        if mode == "append" or mode == 11:
-            print("#====== Running with previously saved data =====#")
-            dest_plot_folder = EXP_FOLDER.DestDir
-            try:
-                saved = pd.read_csv(dest_plot_folder.joinpath("STATUS_OVV.csv"))
-                status = pd.merge(
-                    alldirs, saved, on="dir", how="outer", indicator="indicator_column"
-                )
-                CALC_PARS_svd = pd.read_csv(
-                    glob.glob(dest_plot_folder.joinpath("CALC_PARS_ORR_OVERVIEW*"))[-1]
-                )
-                ORR_JKIN_svd = pd.read_csv(
-                    glob.glob(dest_plot_folder.joinpath("ORR_JKIN_calc_OVV_*"))[-1]
-                )
-                Cdl_fit_svd = pd.read_csv(
-                    glob.glob(dest_plot_folder.joinpath("N2_Cdl_calc_OVV_*"))[-1]
-                )
-                HPRR_svd = pd.read_csv(
-                    glob.glob(dest_plot_folder.joinpath("HPRR_PARS_calc_OVV_*.csv"))[-1]
-                )
-            except Exception as e:
-                print(e)
-        elif mode == "new" or mode == 0:
-            print("#====== Starting from zero =====#")
-            saved = pd.DataFrame(
-                [[i, 0, 0, 0, dt.datetime.now()] for i in alldirs],
-                columns=["dir", "N2", "ORR", "HPRR", "Last_run"],
-            )
-            status = pd.merge(alldirs, saved, on="dir", indicator="indicator_column")
-
-            CALC_PARS_svd, ORR_JKIN_svd, Cdl_fit_svd, HPRR_svd = (
-                pd.DataFrame([]),
-                pd.DataFrame([]),
-                pd.DataFrame([]),
-                pd.DataFrame([]),
-            )
-
-
 # === ---------------- ====
 
 

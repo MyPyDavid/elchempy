@@ -38,26 +38,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-if __name__ == "__main__":
-
-    # from FileHelper.FindFolders import FindExpFolder
-    # from FileHelper.FindSampleID import GetSampleID
-    # from FileHelper.FileFunctions import FileOperations
-    # from ECpy.runEC.EC_logging_config import start_logging
-    from file_inspector import PAR_file_parser
-
-#    from  RunEC_classifier import EC_classifier_multi_core
-else:
-    print(f"Name: {__name__} for file {__file__}")
-    #    import RunEC_classifier
-    #    from  RunEC_classifier import EC_classifier_multi_core
-    # from FileHelper.FindFolders import FindExpFolder
-    # from FileHelper.FindSampleID import GetSampleID
-    # from FileHelper.FileFunctions import FileOperations
-    # from EC_logging_config import start_logging
-    from .file_inspector import PAR_file_parser
-#    ys.path.append(Path(__file__).parent.parent.joinpath('runEC'))
-
+from .file_inspector import PAR_file_parser
 
 #%%
 def getting_date_from_PARf(PARf, exp_dir):
