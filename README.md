@@ -1,13 +1,13 @@
 # `ECpy`
 
-This repository contains packages for the processing of electrochemical(EC) experiments in Python.
+This repository contains packages for the processing of electrochemical (EC) experiments in Python.
 I have used these packages for my scientific projects. However, this repository is an attempt to refactor and develop
-these packages into a clear application architecture. Therefore, this repo is still under construction...
+these packages into a clear application architecture.
 
-> ℹ️ Where this documentation refers to the **root folder** we mean where this
-> README.md is located.
+> ️ :rotating_light:  :construction: :building_construction: This repo is still under construction :construction_worker_man:...
 
-## Getting started
+
+### Getting started
 
 To start contributing to `ECpy`, run the following commands in
 your shell:
