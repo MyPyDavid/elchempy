@@ -4,7 +4,7 @@ import re
 
 import bs4 as BeautifulSoup
 from pathlib import Path
-import logging
+
 
 from .read_file import (
     get_DF_soup_part,
@@ -14,10 +14,13 @@ from .read_file import (
 )
 from .CreateCV import check_lin
 
+from file_py_helper.file_functions import FileOperations
+
+import logging
+
 logger = logging.getLogger(__name__)
 
 # set log level
-logger.setLevel(logging.INFO)
 
 # import statsmodels.api as smf
 # def check_lin(colX,colY):
@@ -198,7 +201,9 @@ def get_RHE_OCP(ovv):
                 with open(RHE_PF) as OCP_file:
                     OCP_read = OCP_file.read()
                 OCP_soup_par = BeautifulSoup(OCP_read, "lxml")
-                hash_f.append([FolderOps.FileOperations.take_hash(RHE_OCP)])
+                hash_f.append(
+                    [FileOperations.take_hash(RHE_OCP)]
+                )  # FIX ME define local hash func
                 act0_DF = get_DF_soup_part(OCP_soup_par.action0, RHE_PF.name)
                 RHE_elec = [i for i in Path(RHE_OCP).name.split("_") if "RHE" in i]
 

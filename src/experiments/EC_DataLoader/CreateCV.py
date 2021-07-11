@@ -21,18 +21,15 @@ from .read_file import (
     add_RRDE,
 )
 
-if __name__ == "__main__":
-    from RHE_assignment import RHE_potential_assignment
-    from read_file import (
-        get_DF_soup_part,
-        collect_data_pars_segment,
-        take_hash,
-        DAC_V_to_RPM,
-        add_RRDE,
-    )
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-#    from ..EC_conditions.electrode import WE_SA_collection_eff
+# from ..EC_conditions.electrode import
+# FIXME TODO load WE_SA_collection_eff as a keyword argument since it depends on each experiment
+# and should not be imported from here
+WE_SA_collection_eff = {}
 
 
 # SORT OF GLOBAL CONSTANTS
@@ -53,45 +50,6 @@ def check_lin(colX, colY):
     rsquared = r_value ** 2
     check = True if np.abs(slope) < 1e-5 else False
     return intercept, slope, rsquared, check
-
-
-# def get_eis_data(ovv,**kwargs):
-#    logger
-
-
-def WE_SA_collection_eff(TYPE="PINE"):
-    coll_eff = []
-    if TYPE == "ALS":
-        r1, r2, r3, coll_eff = 0.1 * 4 * 0.5, 0.1 * 5 * 0.5, 0.1 * 7 * 0.5, []
-        SAdisk, SAring = np.pi * (r1 ** 2), np.pi * (r3 ** 2 - r2 ** 2)
-    if TYPE == "PINE":
-        r1, r2, r3 = 0.1 * 5.5 * 0.5, 0.1 * 6.5 * 0.5, 0.1 * 8.5 * 0.5
-        coll_eff = 0.38
-        SAdisk, SAring = np.pi * (r1 ** 2), np.pi * (r3 ** 2 - r2 ** 2)
-    if TYPE == "PINE-ring":
-        r1, r2, r3 = 0.1 * 5.5 * 0.5, 0.1 * 6.5 * 0.5, 0.1 * 8.5 * 0.5
-        coll_eff = 0.38
-        SAdisk, SAring = np.pi * (r1 ** 2), np.pi * (r3 ** 2 - r2 ** 2)
-    #        SA = np.pi*(r3**2-r2**2)
-    if coll_eff == []:
-        a, b = (r2 / r1) ** 3 - 1, (r3 / r1) ** 3 - (r2 / r1) ** 3
-        c = a / b
-        coll_eff = (
-            1
-            - r3 ** 2
-            + b ** (2 / 3)
-            - coll_func(c)
-            - b ** (2 / 3) * coll_func(a)
-            + r3 ** 2 * coll_func(c * r3 ** 3)
-        )
-    "r1 = disk, r2 = ring ID, r3 = ring OD in mm"
-    #    print('%s According to manufacturer: disk(dia:%.2f cm   %.4f cm2), ring (%.4f cm2)' %(TYPE,r1*2,SAdisk,SAring))
-    return {
-        "Electrode Type": TYPE,
-        "CollEff": coll_eff,
-        "Disk_cm2": np.round(SAdisk, 4),
-        "Ring_cm2": np.round(SAring, 4),
-    }
 
 
 def _drop_cols_from_data_segment():
@@ -612,27 +570,3 @@ def create_CVs(ovv, **kwargs):
         )
         DATA_Out = pd.DataFrame()
     return DATA_Out, ActionOut
-
-
-# pd.concat(DATA_list,sort=False)
-
-
-def CreateCV_multi(ovv, OutPutRaw=False):
-
-    try:
-        logger.info(
-            f"EIS eis_run_group_ovv START multiprocessing {multi_par_fit} for len{len(fit_run_args)}"
-        )
-        pool_size = os.cpu_count() - 2
-        #            if 'linux' in sys.platform:
-        #                os.system("taskset -p 0xff %d" % os.getpid())
-        with multiprocessing.Pool(pool_size) as pool:
-            fit_export_EV_all_chunck = PF_fit_starmap_with_kwargs(
-                pool, fit_EEC, fit_run_args, fit_kwargs_iter
-            )
-            fit_export_EV_all.append(fit_export_EV_all_chunck)
-    except Exception as e2:
-        #        print('EIS eis_run_group_ovv multiprocessing error: {0}'.format(e2))
-        logger.error(
-            f"EIS eis_fit_PAR_file  multiprocessing erroe: {e2}, len out({len(fit_export_EV_all)})"
-        )

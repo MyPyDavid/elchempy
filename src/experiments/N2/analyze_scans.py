@@ -1,26 +1,27 @@
-import sys
+# import sys
 from pathlib import Path
-from collections import namedtuple
+
+# from collections import namedtuple
 from datetime import datetime
 import numpy as np
 
 from scipy.stats import linregress, zscore
 import matplotlib.pyplot as plt
 
-import os
-import multiprocessing
-from functools import partial
-from itertools import repeat
+# import os
+# import multiprocessing
+# from functools import partial
+# from itertools import repeat
 import pandas as pd
 
 
-from file_py_helper.find_folders import FindExpFolder
+# from file_py_helper.find_folders import FindExpFolder
 from file_py_helper.file_functions import FileOperations
+from .plotting import N2_plot_Cdl_sweeptype_scatter, N2_plot_Cdl_scans_scanrate
 
-print("File", __file__, "\nName;", __name__)
-if __name__ == "__main__":
-    pass
-
+# print("File", __file__, "\nName;", __name__)
+# if __name__ == "__main__":
+# pass
 
 import logging
 
@@ -40,35 +41,11 @@ def N2_scans(fit_run_arg, **N2_kwargs):
     return N2_scan, Cdl_fit, Cdl_PARS
 
 
-def N2_prepare_file_info():
-    SampleID = N2_ovv_file["SampleID"].values[0]
-    Loading_name = N2_ovv_file["Loading_name"].values[0]
-    Electrolyte = N2_ovv_file["Electrolyte"].values[0]
-    postAST = N2_ovv_file["postAST"].values[0]
-    N2_scans_folder_version = f"N2_scans_v{FileOperations.version}"
-    N2_exp_folder = "_".join([Electrolyte, SampleID, Loading_name, postAST])
-    N2_dest_dir = Path(N2_ovv_file.Dest_dir.iloc[0]).joinpath(
-        f"{N2_scans_folder_version}/{N2_exp_folder}"
-    )
-    N2_dest_dir.mkdir(parents=True, exist_ok=True)
-    #    FolderOps.FileOperations.make_path(N2_dest_dir)
-
-    #    N2_fn = os.path.splitext(os.path.basename(N2gr['File'].unique()[0]))[0]
-    #    gr_N2_ovv.PAR_file.iloc[0] = Path(gr_N2_ovv.PAR_file.iloc[0])
-    N2_FileName = Path(N2_ovv_file["PAR_file"].unique()[0])
-    N2_fn = N2_FileName.stem
-    N2_act_BG = Path(N2_dest_dir.parent).joinpath(N2_fn + "_BG.pkl")
-
-    # Read or load in experimental data file, PAR_file...
-    if "N2_preload_CV" in N2_kwargs.keys():
-        N2_CVs, N2_actions = N2_kwargs.get["N2_preload_CV"]
-    else:
-        pass
-        # N2_CVs, N2_actions = create_CVs(N2_ovv_file)
-    N2_CVs = N2_CVs.loc[N2_CVs.ActionId == 38]
+def N2_prepare_file_info(N2_ovv_file, **N2_kwargs):
+    pass
 
 
-def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, **N2_kwargs):
+def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, N2_FileName, **N2_kwargs):
     """
     Contains the logic for a N2 or nitrogen scans experiment
 
@@ -100,6 +77,32 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, **N2_kwargs):
     #    RRDEloading = 0.09  # 0.09 mg_cat on PINE_disk (0.238 cm2)
     #    GeoArea = WE_SA_collection_eff('PINE')['Disk_cm2']
 
+    SampleID = N2_ovv_file["SampleID"].values[0]
+    Loading_name = N2_ovv_file["Loading_name"].values[0]
+    Electrolyte = N2_ovv_file["Electrolyte"].values[0]
+    postAST = N2_ovv_file["postAST"].values[0]
+    N2_scans_folder_version = f"N2_scans_v{FileOperations.version}"
+    N2_exp_folder = "_".join([Electrolyte, SampleID, Loading_name, postAST])
+    N2_dest_dir = Path(N2_ovv_file.Dest_dir.iloc[0]).joinpath(
+        f"{N2_scans_folder_version}/{N2_exp_folder}"
+    )
+    N2_dest_dir.mkdir(parents=True, exist_ok=True)
+    #    FolderOps.FileOperations.make_path(N2_dest_dir)
+
+    #    N2_fn = os.path.splitext(os.path.basename(N2gr['File'].unique()[0]))[0]
+    #    gr_N2_ovv.PAR_file.iloc[0] = Path(gr_N2_ovv.PAR_file.iloc[0])
+    N2_FileName = Path(N2_ovv_file["PAR_file"].unique()[0])
+    N2_fn = N2_FileName.stem
+    N2_act_BG = Path(N2_dest_dir.parent).joinpath(N2_fn + "_BG.pkl")
+
+    # Read or load in experimental data file, PAR_file...
+    if "N2_preload_CV" in N2_kwargs.keys():
+        N2_CVs, N2_actions = N2_kwargs.get["N2_preload_CV"]
+    else:
+        pass
+        # N2_CVs, N2_actions = create_CVs(N2_ovv_file)
+    N2_CVs = N2_CVs.loc[N2_CVs.ActionId == 38]
+
     ###### ====== Exporting all Segments of Scansr ========== #######
     #  N2_CVs.groupby('Scan Rate (V/s)').plot(x=EvRHE,y='jmAcm-2',kind='scatter')
     # Add ,'Sweep_Type'  to N2gr.groupby to differentiate for cathodic and anodic. '_'+nm[2]+
@@ -130,10 +133,10 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, **N2_kwargs):
         #            print(scan)
         #                grA.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','0.1'))
         #        grB.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','N2_act')).to_csv(N2_dest_dir.joinpath('%s.csv' %N2_fn))
-        def get_scanrates(N2_CVs):
-            grA = N2_CVs.groupby(
-                by=["Gas", "Type_action", "PAR_exp", "Scan Rate (V/s)"]
-            )
+        grA = N2_CVs.groupby(by=["Gas", "Type_action", "PAR_exp", "Scan Rate (V/s)"])
+
+        def get_scanrates(N2_CVs, grA):
+
             try:
                 ScanRates = np.array([i[-1] for i in grA.groups])
 
@@ -623,7 +626,7 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, **N2_kwargs):
             xlim=[-0.2, 1.2],
             ax=ax,
             label="last N2 scan",
-            title=os.path.basename(N2_scan.PAR_file.unique()[0]),
+            title=(N2_scan.PAR_file.unique()[0]),
         )
         if len(N2_scan) < 2010 or len(N2_scan) > 1990:
             N2_scan.plot(
@@ -729,73 +732,3 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, **N2_kwargs):
 
     # %%
     return N2_scan, Cdl_fit, Cdl_PARS
-
-
-def N2_plot_Cdl_scans_scanrate(Cdl_scans, _savepath):
-    EvRHE = "E_AppV_RHE"
-    fig, ax = plt.subplots(figsize=(8, 8))
-
-    for sr, sgr in Cdl_scans.groupby("ScanRate_mVs"):
-        _seg = int(sgr["Segment #"].unique()[0])
-        ax.plot(sgr[EvRHE], sgr["jmAcm-2"], label=f"{sr} mV, seg {_seg}")
-    #                ax.legend(True)
-    fig.suptitle(f"{Path(Cdl_scans.PAR_file.unique()[0]).name}")
-    ax.legend()
-    ax.set_ylabel("$j \//\/mA/cm^{2}$")
-    ax.set_xlabel("$E \//\/V_{RHE}$")
-    plt.savefig(_savepath, dpi=100, bbox_inches="tight")
-    plt.close()
-
-
-def N2_plot_Cdl_sweeptype_scatter(
-    SampleID, ScanRates, Cdl_fit, Cdl_cath_slice, Cdl_an_slice, N2_dest_dir, N2_fn
-):
-    EvRHE = "E_AppV_RHE"
-    fig, ax = plt.subplots()
-    plt.title(
-        "%s made with linear fit of\n %s (R=%.3f)"
-        % (SampleID, ScanRates, Cdl_fit["Cdl_R"].mean())
-    )
-
-    Cdl_cath_slice.plot(
-        x=EvRHE,
-        y="Cdl_corr",
-        kind="scatter",
-        ylim=(0, 1.2 * Cdl_fit.Cdl.max()),
-        color="orange",
-        ax=ax,
-        label="Cdl_Cath_corr",
-    )
-    Cdl_cath_slice.plot(
-        x=EvRHE,
-        y="Cdl",
-        kind="scatter",
-        ylim=(0, 1.2 * Cdl_fit.Cdl.max()),
-        color="r",
-        ax=ax,
-        label="Cdl_Cath",
-    )
-    Cdl_an_slice.plot(
-        x=EvRHE,
-        y="Cdl_corr",
-        kind="scatter",
-        ylim=(0, 1.2 * Cdl_fit.Cdl.max()),
-        color="c",
-        ax=ax,
-        label="Cdl_Anod_corr",
-    )
-    Cdl_an_slice.plot(
-        x=EvRHE,
-        y="Cdl",
-        kind="scatter",
-        ylim=(0, 1.2 * Cdl_fit.Cdl.max()),
-        ax=ax,
-        label="Cdl_Anod",
-    )
-
-    plt.savefig(N2_dest_dir.joinpath(f"Cdl_{N2_fn}.png"), dpi=100, bbox_inches="tight")
-    pd.concat([Cdl_an_slice, Cdl_cath_slice], sort=False, axis=0).to_csv(
-        N2_dest_dir.joinpath(f"Cdl_FIT_{N2_fn}.csv")
-    )
-    logger.info(f"Cdl fit saved to: Cdl_FIT_{N2_fn}.csv")
-    plt.close()

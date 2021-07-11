@@ -17,6 +17,8 @@ import pandas as pd
 
 from file_py_helper.find_folders import FindExpFolder
 from file_py_helper.file_functions import FileOperations
+from file_py_helper.ExtraInfo import EC_Properties
+
 
 if __name__ == "__main__":
     pass
@@ -32,7 +34,7 @@ class KL_operations:
         self.ORR_dest_dir_file = ORR_dest_dir_file
         self.electrode_properties = electrode_properties
 
-    def prepare_data(self):
+    def prepare_data(self, KL_data):
         _KL_meta = (
             KL_data[[i for i in KL_data.columns if KL_data[i].nunique() == 1]]
             .iloc[0]
@@ -79,7 +81,9 @@ def KL_plots(KL_data, ORR_dest_dir_file):
         KLcoeffpH.D0.values[0],
         KLcoeffpH.kVis.values[0],
         KLcoeffpH.C0.values[0],
-        WE_SA_collection_eff("PINE")["Disk_cm2"],
+        EC_Properties.WE_SA_collection_eff("PINE")[
+            "Disk_cm2"
+        ],  # FIX ME JUST GET CONSTANT VALUE
     )
     #    print('KL pars used:',F,D,nu,C,Area)
     #    print('KLoutCol:',KLout.columns)

@@ -1,4 +1,4 @@
-import sys
+# import sys
 from pathlib import Path
 from collections import namedtuple
 from datetime import datetime
@@ -9,19 +9,20 @@ from scipy.stats import linregress
 
 # from scipy.interpolate import UnivariateSpline
 from scipy import constants
-from scipy.signal import savgol_filter
+
+# from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
 
 import matplotlib.pyplot as plt
 
-import os
-import multiprocessing
-from functools import partial
-from itertools import repeat
+# import os
+# import multiprocessing
+# from functools import partial
+# from itertools import repeat
 import pandas as pd
 
 print("File", __file__, "\nName;", __name__)
-from file_py_helper.find_folders import FindExpFolder
+# from file_py_helper.find_folders import FindExpFolder
 from file_py_helper.file_functions import FileOperations
 
 
@@ -243,7 +244,7 @@ def ORR_extract_pars(ORR_N2_corrected, **kwargs):
     return output_pars
 
 
-def tesplot():  # noqa: F821
+def tesplot(O2_join):  # noqa: F821
     O2_join.loc[(O2_join[EvRHE] < 0.75) & (O2_join[EvRHE] > 0.4)].plot(
         x="Jkin_min",
         y="Frac_H2O2",
@@ -265,8 +266,15 @@ class ORR_Tafel:
     def __init__():
         pass
 
-    def export():  # noqa : F821
-        ORR_dest_dir.joinpath("TAFEL")
+    def export(
+        ORR_dest_dir,
+        rTFxy,
+        i,
+        TFll,
+        dest_file,
+        TFfit,
+    ):  # noqa : F821
+        TafelDir = ORR_dest_dir.joinpath("TAFEL")
         TafelDir.mkdir(parents=True, exist_ok=True)
 
         rTFxy.plot(
@@ -276,14 +284,14 @@ class ORR_Tafel:
         #                            plt.show()
         plt.close()
         TF_out_base = TafelDir.joinpath(dest_file + ".xlsx")
-        TF_out = FolderOps.FileOperations.CompareHashDFexport(TFxy, TF_out_base)
-        TFxy.to_excel(TF_out_base)
-        index_info_ORR_TAFEL = {
-            "PAR_file": PAR_file,
-            "DestFile": TF_out,
-            "Type_output": "ORR_Jkin_calc_Tafel",
-            "Type_exp": "ORR",
-        }
+        # TF_out = ileOperations.CompareHashDFexport(TFxy, TF_out_base)
+        rTFxy.to_excel(TF_out_base)
+        # index_info_ORR_TAFEL = {
+        #     "PAR_file": PAR_file,
+        #     "DestFile": TF_out,
+        #     "Type_output": "ORR_Jkin_calc_Tafel",
+        #     "Type_exp": "ORR",
+        # }
 
     def calculations(O2_join):
         sweep_col = [
@@ -490,7 +498,7 @@ class ORR_calculations:
         }
         _rpm_list = _rpm_ref_lists.get(len(_longsegs), [])
         self.rpm_list = _rpm_list
-        _logger.info("Jkin calculation rpm list used: {0}".format(rpm_list))
+        _logger.debug("Jkin calculation rpm list used: {0}".format(_rpm_list))
 
     def _set_electrode_info(self):
         # TODO move out and input as kwargs
@@ -527,7 +535,7 @@ class ORR_calculations:
                 how="left",
             )
             self.O2_act = O2_act
-            _logger.warning(f"Jkin calculation, RPM_DAC used from Ring {fstem}")
+            _logger.warning(f"Jkin calculation, RPM_DAC used from Ring self.fstem")
             # TODO Match Segments with RPM_DACs of Ring and Merge with Disk
 
     def prepare_N2_BG_data(self):
@@ -1773,14 +1781,14 @@ def modeling_ORR_swp(_O2N2):
             - (C_R / C_R_bulk) * np.exp((1 - 0.5) * _f_RT * (x))
         )
 
-    def BV_simple0(x, i0, alpha, E):
+    def BV_simple0_no_CD(x, i0, alpha, E):
         _f_RT = (constants.e * constants.Avogadro) / (constants.R * 298)
         return -1 * i0 * (np.exp(-alpha * _f_RT * (x - 1.23))) / 0.237
 
     def BV_simple(x, k_rj_0i, alpha, Cp_i, E, E2, Cp_2, k_rj_02, c, d):
         _f_RT = (constants.e * constants.Avogadro) / (constants.R * 298)
         j1 = -1 * k_rj_0i * (np.exp(-alpha * _f_RT * (x - E)) * Cp_i) * 0.237
-        j2 = -1 * k_rj_02 * (np.exp(-alpha * _f_RT * (x - E2)) * Cp_2) * 0.237
+        # j2 = -1 * k_rj_02 * (np.exp(-alpha * _f_RT * (x - E2)) * Cp_2) * 0.237
         return j1 + (c * x + d)
 
     def fsigmoid(x, a, b, c, d):

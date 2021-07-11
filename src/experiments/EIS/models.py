@@ -16,26 +16,10 @@ from collections import OrderedDict
 import pandas as pd
 import math
 
-if __name__ == "__main__":
-    # from eis_run_ovv import EIS_Spectrum
-    from repos.imppy.impedance.models.circuits import CustomCircuit, buildCircuit
-    from repos.imppy.impedance.models.circuits.elements import R, C, CPE, W, Wo, Ws
-#    from ECpy.experiments.EIS.repos.imppy.impedance.circ import validation as imppy_validation
-elif Path(__file__).parent.name == "EIS" and __name__ == "models":
-    from repos.imppy.impedance.models.circuits import CustomCircuit, buildCircuit
-elif __name__.startswith("ECpy"):
-    from ECpy.experiments.EIS.repos.imppy.impedance.models.circuits import (
-        CustomCircuit,
-        buildCircuit,
-    )
 
-else:
-    from experiments.EIS.repos.imppy.impedance.models.circuits import (
-        CustomCircuit,
-        buildCircuit,
-    )
-
-    # from repos.imppy.impedance.models.circuits import CustomCircuit
+# from .impedancepy.impedance import validation as imppy_validation
+from .impedancepy.impedance.models.circuits import CustomCircuit, buildCircuit
+from .impedancepy.impedance.models.circuits.elements import R, C, CPE, W, Wo, Ws
 
 EvRHE = "E_AppV_RHE"
 
@@ -94,31 +78,6 @@ def _check_series(circuit_str):
     )
     p_split = t_series.split(" + ")
     return p_split
-
-
-def test_parsers():
-    t = "R0-p(R1,p(R3-CPE1)-W0)-p(R2,CPE2-W1)-L0"
-    # enumt = enumerate(t)
-    # dash = [(n,i) for n,i in enumerate(t) if i == '-']
-    # _open = [(n,i) for n,i in enumerate(t) if i == '(']
-    # _close = [(n,i) for n,i in enumerate(t) if i == ')']
-    # dash_out = [n for n,i in dash if not any( c[0][0] < n < c[1][0] for c in list(zip(_open,_close))) ]
-    # dash_in = [i[0] for i in dash if i[0] not in dash_out]
-    # t_series = ''.join([t if n not in dash_out else ' + ' for n,t in enumerate(t)])
-    # p_split= t_series.split(' + ')
-    # _nws = ''
-    # len(p_split)
-    p_split = _check_series(t)
-    for i in _check_series(t):
-        print(_check_series(i))
-
-        if not i.startswith("p(") and not i.endswith(")"):
-            _nws += f"{i} + "
-        elif i.startswith("p("):
-            for pi in i.split(","):
-                if i.startswith("p("):
-                    pass
-                    pi  # TODO continue parsers
 
 
 # best_mod_RandlesW = CustomCircuit(initial_guess=[25,100, 3E02, 0.7E-03,0.7, 1E-4 ],
@@ -314,80 +273,6 @@ class EEC_(BaseModel):
 
     def func(self,
 """
-
-
-def _testing(B, Cdl, Rct, Qad, Rd, tau):
-    ang = np.array([2 * 3.14 * i for i in np.logspace(4, -1)])
-    Z_pore = (B * np.sqrt(1j * ang)) * coth_func(B * np.sqrt(1j * ang))
-    Rs = 0.1
-    Zdl = (1j * Cdl * ang) ** -1
-    Zad = Rct + (1j * Qad * ang) ** -1
-    Zout = Rs + (1 / Zdl + 1 / Z_pore + 1 / Zad) ** 1
-    Zw = (Rd / np.sqrt(1j * ang * tau)) * np.array(
-        [np.tanh(np.sqrt(1j * w * tau)) for w in ang]
-    )
-    Zout = Rs + (1 / (Rct + Zw) + (1j * Cdl * ang)) ** -1
-
-    Ztot = Rs + Zp / n
-    # Zout = Rs +  (1/Zdl + 1/Z_pore)**1
-    # Zout = Rs +  ( 1/Z_pore)**1
-    # Zout = ( 1/Z_pore)**1
-    mod = BaseModel()
-    ZW = mod.Warburg_Z(ang, 670, 17)
-    Ztot = 20 + ZW
-    fig, ax = plt.subplots()
-    ax.plot(ZW.real, -1 * ZW.imag)
-    # ax.plot(Zout.real, Zout.real,ls='--')
-    ax.set_title(", ".join([str(i) for i in [B, Cdl, Rct, Qad]]))
-
-    mod = F_fractal_pore()
-    mod = F_fractal_TLMTLM()
-
-    mc = Model_Collection(_startswith="F_")
-
-    fig, ax = plt.subplots()
-    for _m in mc.lmfit_models:
-        ax.plot(_m.mod_eval.real, -1 * _m.mod_eval.imag, label=_m.name)
-    ax.set_xlim([0, 150])
-    ax.set_ylim([0, 150])
-    ax.legend(loc="best")
-    #%% testing plots
-    Aw, tau, WL = 340e-1, 60e-05, 1e-03
-    Z_FLW = (Aw / np.sqrt(1j * mod.ang * tau)) * np.tanh(
-        WL * np.sqrt((1j * mod.ang) / tau)
-    )
-    Z_W = (Aw / np.sqrt(1j * mod.ang * tau)) * np.tanh(np.sqrt(1j * mod.ang * tau))
-    G0, Ger_k, Ger_D, L = 100, 0.1, 1, 1e2
-    Z_G = G0 / np.sqrt((Ger_k + 1j * mod.ang) * Ger_D)
-    Z_G_FLW = (G0 / np.sqrt((Ger_k + 1j * mod.ang) * Ger_D)) * np.tanh(
-        L * np.sqrt((Ger_k + 1j * mod.ang) / Ger_D)
-    )
-    fig, ax = plt.subplots()
-    ax.plot(Z_W.real, -1 * Z_W.imag, label="Z_W")
-    ax.plot(Z_FLW.real, -1 * Z_FLW.imag, label="Z_FLW")
-    ax.plot(Z_G.real, -1 * Z_G.imag, label="Z_G")
-    ax.plot(Z_G_FLW.real, -1 * Z_G_FLW.imag, label="Z_G")
-    ax.legend()
-
-
-#%% Model Classes<
-def _test_warburg():
-    ang = np.array([2 * 3.14 * i for i in np.logspace(4, -1)])
-    _Wspace = np.logspace(1, 3, 5)
-    _Bspace = np.logspace(-2, 2, 10)
-    ZW = mod.Warburg_Z(ang, 670, 17)
-    Ztot = 20 + ZW
-
-    fig, ax = plt.subplots()
-    for Aw in _Wspace:
-        for b in _Bspace:
-            ZW = 20 + mod.Warburg_Z(ang, Aw, b)
-            ax.plot(ZW.real, -1 * ZW.imag, label=(b))
-
-    fig, ax = plt.subplots()
-    ZW = 21 + mod.Warburg_Z(ang, 37, 0.0811)
-    ax.plot(ZW.real, -1 * ZW.imag, label=(b))
-    # ax.legend()
 
 
 class M_2CPE(BaseModel):
@@ -1634,12 +1519,14 @@ class N_Levie_pore(BaseModel):
 
     name = "Levie_pore"
 
-    def func(self, ang, rho_el, l_pore, n_pore, r_pore, npores):
+    def func(self, ang, rho_el, l_pore, n_pore, r_pore, npores, Z_eq):
         # Rct, Awo, tau, Cdlp, Aw):
 
         R_0 = rho_el / (np.pi * r_pore ** 2)
         Z_0 = Z_eq / (2 * np.pi * r_pore)
-        Z_deLevie = np.sqrt(R_0 * Z_0) * coth_func(l_pore * np.sqrt(R_0 * Z_0))
+        Z_deLevie = np.sqrt(R_0 * Z_0) * BaseModel.coth_func(
+            l_pore * np.sqrt(R_0 * Z_0)
+        )
 
 
 class N_Levie_W(BaseModel):
@@ -1647,13 +1534,15 @@ class N_Levie_W(BaseModel):
 
     name = "Levie"
 
-    def func(self, ang, rho_el, l_pore, n_pore, r_pore, npores):
+    def func(self, ang, rho_el, l_pore, n_pore, r_pore, npores, Z_eq):
         # Rct, Awo, tau, Cdlp, Aw):
 
         R_0 = rho_el / (np.pi * r_pore ** 2)
         Z_0 = Z_eq / (2 * np.pi * r_pore)
 
-        Z_deLevie = np.sqrt(R_0 * Z_0) * coth_func(l_pore * np.sqrt(R_0 * Z_0))
+        Z_deLevie = np.sqrt(R_0 * Z_0) * BaseModel.coth_func(
+            l_pore * np.sqrt(R_0 * Z_0)
+        )
 
 
 class N_Levie_ESR_Cdl(BaseModel):
@@ -1739,7 +1628,7 @@ class P_Levie_Gassa(BaseModel):
         return (
             Ls
             + Rs
-            + (Rel_p * np.sqrt(1 / _lambda) * np.sqrt(coth_func(_lambda)))
+            + (Rel_p * np.sqrt(1 / _lambda) * np.sqrt(BaseModel.coth_func(_lambda)))
             + (1 / (Qad ** 1 * (1j * ang) ** 1))
         )
 
@@ -1868,7 +1757,7 @@ class T_Levie_Ober(BaseModel):
                 _t = rpore * (1 - np.sqrt(1 - 1 / VF))
                 R0[nrp] = 1 / (kappa_CL * np.pi * ((rpore ** 2) - (rpore - _t) ** 2))
                 Z0[_na, nrp] = 1 / (2 * np.pi * rpore * 1j * c_dl * _a)
-                Zpore[_na, nrp] = np.sqrt(R0[nrp] * Z0[_na, nrp]) * coth_func(
+                Zpore[_na, nrp] = np.sqrt(R0[nrp] * Z0[_na, nrp]) * BaseModel.coth_func(
                     lenpore * np.sqrt(R0[nrp] / Z0[_na, nrp])
                 )
 
@@ -1891,7 +1780,7 @@ class T_Levie_Ober(BaseModel):
         # Z_deLevie = Z_dL_0 + Z_dL_coth
 
 
-def testplots():
+def testplots(Z_out, Ztot, Z_sideads):
     plt.plot(Z_out.real, -1 * Z_out.imag)
     plt.plot(Ztot.real, -1 * Ztot.imag)
     plt.plot(Z_sideads.real, -1 * Z_sideads.imag)
@@ -1943,9 +1832,11 @@ class L_Song_PSDTLM(BaseModel):
         r_pore_mean,
         pore_psd_var,
         N_pores,
+        alpha,
+        y,
     ):
 
-        R_mu, n_mu, lamda_mu, alpha_mu
+        # R_mu, n_mu, lamda_mu, alpha_mu
 
         def Z_pore(alpha):
             # Zp = Zp_star / R_pore
@@ -1953,7 +1844,7 @@ class L_Song_PSDTLM(BaseModel):
             _real = (np.sinh(_ar) - np.sin(_ar)) / (np.cosh(_ar) - np.cos(_ar))
             _imag = (np.sinh(_ar) + np.sin(_ar)) / (np.cosh(_ar) - np.cos(_ar))
             Zp_star = alpha * (_real - 1j * _imag)
-            return Zp_start
+            return Zp_star
 
         def PSD_simul(y):
             np.exp(-0.5 * y ** 2)
@@ -1962,7 +1853,9 @@ class L_Song_PSDTLM(BaseModel):
 
         # Z_out = L(iω) + R e + [ R C + Z W ] γ 1 coth ( γ 1 ) / (1 + Y ( i ω )^P [ R C + Z W ])
 
-        return Rs + Ls * (1j * ang) + ((Cdlp * (1j * ang)) + 1 / (Rct + Z_G)) ** -1
+        return Ztot_1
+
+    # Rs + Ls * (1j * ang) + ((Cdlp * (1j * ang)) + 1 / (Rct + Z_G)) ** -1
 
 
 class F_fractal_pore(BaseModel):
@@ -2396,521 +2289,9 @@ class Model_Collection:
             )
         )
 
-    # def make_testdata(self):
-    #     for mod_inst in self.lmfit_models:
-    #         {mod_inst : {'color'Angular' mod_inst.ang
-
 
 #    def colors(self, cmap = 'tab20'):
 #        self.lmift_models_color = ((*i, plt.get_cmap('tab20')(n)) for n,i in enumerate(self.lmfit_models))
 # {mod_inst : {'color'Angular' mod_inst.ang
 # ====================   ^^^    ===============#
 #%% older stuff
-
-
-def imppy_costum():
-
-    type1 = CustomCircuit(
-        initial_guess=[25, 5e-05, 100, 300, 0.7e-03, 0.7, 3e-04, 0.7],
-        circuit="R0-L0-p(R1-W0,CPE1)-CPE2",
-        name="1",
-    )
-    # type1b = CustomCircuit(initial_guess=[25,5E-05,100,300, 0.7E-03,0.7,3E-04,0.7],
-    #                              circuit='R0-L0-p(R1-W0-CPE2,CPE1)',name='1b')
-    # CustomCircuit(initial_guess=[20,5E-05,30,300,0.5, 0.7E-03,0.7,50, 30, 0.5,3E-04,0.7],
-    #                              circuit='R0-L0-p(R1-Wo0-CPE2,R2-Ws0-CPE1)',name='1b') # slecht
-
-    type1C = CustomCircuit(
-        initial_guess=[25, 5e-05, 100, 300, 2, 0.7e-03, 0.7, 3e-04, 0.7],
-        circuit="R0-L0-p(R1-Wo0,CPE1)-CPE2",
-        name="1c",
-    )
-    type1C_RC = CustomCircuit(
-        initial_guess=[25, 5e-05, 100, 300, 2, 3e-04, 0.7, 100, 3e-03],
-        circuit="R0-L0-p(R1-Wo0,CPE1)-p(R2,C2)",
-        name="1c+RC",
-    )
-
-    type1C_RCWs = CustomCircuit(
-        initial_guess=[25, 5e-05, 100, 300, 2, 3e-04, 0.7, 100, 3e-03],
-        circuit="R0-L0-p(R1-Ws0,CPE1)-p(R2,C2)",
-        name="1c+RWs+C",
-    )
-
-    type1C_W = CustomCircuit(
-        initial_guess=[25, 5e-05, 100, 300, 2, 3e-04, 0.7, 100],
-        circuit="R0-L0-p(R1-Wo0,CPE1)-W0",
-        name="1c+W",
-    )
-    type1C_RCPE = CustomCircuit(
-        initial_guess=[25, 5e-05, 100, 300, 2, 3e-04, 0.7, 100, 3e-03, 0.7],
-        circuit="R0-L0-p(R1-Wo0,CPE1)-p(R2,CPE2)",
-        name="1c+RCPE",
-    )
-    type1C_CPE = CustomCircuit(
-        initial_guess=[25, 5e-05, 100, 300, 2, 3e-04, 0.7, 3e-03, 0.7],
-        circuit="R0-L0-p(R1-Wo0,CPE1)-CPE2",
-        name="1c+CPE",
-    )
-
-
-class parse_circuit:
-    def __init__(self, obj):
-        if "Circuit" in type(circuit).__name__:
-            self.circuit = obj.circuit
-
-
-def model_ORRpOx(params, ang, Zdata):
-    Rs = params["Rs"].value
-    Cdlp = params["Cdlp"].value
-    nDL = params["nDL"].value
-    Rct = params["Rct"].value
-    #    Rad, Aw = params['Aw'].value, params['Rad'].value
-    Qad, nAd, Rorr = params["Qad"].value, params["nAd"].value, params["Rorr"].value
-    Zfit = EEC_ORRpOx(ang, Rs, Cdlp, nDL, Rct, Qad, nAd, Rorr)
-    #    (Rs + (1 / ((1/(Cdlp**-1*(1j*ang)**-n)+(1/(Ra+Aw*(1j*ang)**-0.5))))))
-    diff = Zfit - Zdata
-    return diff.view(np.float)
-
-
-def EIS_simpleRRC(ang, Rs, Cdlp, Rc, nDL):
-    return Rs + (1 / (Cdlp ** 1 * (1j * ang) ** nDL + 1 / Rc))
-
-
-def model_EEC(params, ang, Zdata):
-    Rs = params["Rs"].value
-    Cdlp = params["Cdlp"].value
-    Rc = params["Rct"].value
-    nDL = params["nDL"].value
-    Zfit = EIS_simpleRRC(ang, Rs, Cdlp, Rc, nDL)
-    #    (Rs + (1 / ((1/(Cdlp**-1*(1j*ang)**-n)+(1/(Ra+Aw*(1j*ang)**-0.5))))))
-    diff = Zfit - Zdata
-    return diff.view(np.float)
-
-
-def porous_b_Warb(params, ang, Zdata):
-    B = 1.61 * np.sqrt(rot) * (nu / D) ** (1 / 6)
-    Y_0 = n ** 2 * F * A / (R * T * (1 / (C_)))
-    Z = ((1 / Y_0) / np.sqrt(1j * ang)) * np.tanh(B * np.sqrt(1j * ang))
-
-
-def EEC_models_index(exclude=[], select=None):
-    model_index_list = new_models_list()
-
-    if exclude:
-        mod_index_fltr = [
-            i for i in model_index_list if not any(ex in str(i[1]) for ex in exclude)
-        ]
-    else:
-        mod_index_fltr = model_index_list
-    if select:
-        if isinstance(select, list):
-            mod_index_fltr = [
-                i for i in model_index_list if any(sl in str(i[1]) for sl in select)
-            ]
-        elif isinstance(select, str):
-            mod_index_fltr = [i for i in model_index_list if select in i[1].name]
-        else:
-            mod_index_fltr = model_index_list
-
-    return mod_index_fltr
-
-
-def params_extra_setting(params, EISgr_data_EV, EIS_fit_kwargs):
-    sID, gas, pH = (
-        EISgr_data_EV["SampleID"].unique()[0],
-        EISgr_data_EV.Gas.unique()[0],
-        EISgr_data_EV.pH.unique()[0],
-    )
-    #    if any([i for i in sID if i in ['DW29','DW21']]):
-    #        print('DW29')
-    ##        params['Rct'].max = 20E3
-    #        params['Rct'].value = 100
-    #
-    #    if pH > 7 and gas == 'O2':
-    #        params['Rct'].value = 20
-    ##        params['Rct'].max = 1E5
-    #    elif pH < 7 and gas == 'O2':
-    #        params['Rct'].value = 50
-    ##        params['Rct'].max = 1E6
-    #
-    #    if 'O2' in EISgr_data_EV['Gas'].unique()[0]:
-    #        params['Rorr'].value = 1000
-    #        params['Rorr'].max = 1E8
-    #        params['Rct'].value = 500
-    #        params['Rct'].max = 1E4
-    if "Nicole" in EIS_fit_kwargs.get("input_run", ""):
-        params["nDL"].set(value=1, vary=False)
-
-    return params
-
-
-class _old_models:
-    def EEC_Bandarenka_Ads(ang, Rs, Cdlp, nDL, Rct, Qad, nAd):
-        """Bondarenko_Langmuir_2011, Fig6b, adsorption of species"""
-        #    return Rs + (1 / ((1/(Cdlp**-1*(1j*ang)**-nDL)+(1/(Rct+Qad*(1j*ang)**-0.5)))))
-        return Rs + (
-            1
-            / (
-                Cdlp ** 1 * (1j * ang) ** nDL
-                + 1 / (Rct + 1 / ((Qad ** 1 * (1j * ang) ** nAd)))
-            )
-        )
-
-    def EEC_Randles_RQRQ(ang, Rs, Ls, Cdlp, nDL, Rct, Qad, nAd):
-
-        """R0-L0-CPE1-p(R1,CPE2)
-        Bondarenko_Langmuir_2011, Fig6b, adsorption of species"""
-        return (
-            Rs
-            + Ls * (1j * ang)
-            + (
-                (1 / (Cdlp * (1j * ang) ** nDL) ** -1)
-                + (1 / (Rct + (Qad * (1j * ang) ** nAd) ** -1))
-            )
-            ** -1
-        )
-
-    # def model_ORR(params,ang,Zdata):
-    #    '''Model Bondarenko_Langmuir_2011, Fig6b'''
-    #    Rs = params['Rs'].value
-    #    Cdlp = params['Cdlp'].value
-    #    nDL = params['nDL'].value
-    #    Rct = params['Rct'].value
-    #    Qad = params['Qad'].value
-    #    Zfit = EEC_ORR(ang,Rs,Cdlp,n,Rct,Aw)
-    ##    (Rs + (1 / ((1/(Cdlp**-1*(1j*ang)**-n)+(1/(Ra+Aw*(1j*ang)**-0.5))))))
-    #    diff = Zfit - Zdata
-    #    return diff.view(np.float)
-    #
-    # def EEC_ORRpOx(ang,Rs,Cdlp,nDL,Rct,Aw,Rad,Qad,nAd,Rorr):
-    #    '''Other model with Faradaic and 2 CPEs'''
-    #    return Rs+ (1/(Cdlp*(1j*ang)**nDL+ 1/( Rct+ 1/( (Qad*(1j*ang)**nAd)*Rorr**-1))))
-    ##Rs + (1 / ((1/(Cdlp**-1*(1j*ang)**-nDL)+(1/(Rct+Aw*(1j*ang)**-0.5+ Rad+ 1/(Qad**-1*(1j*ang)**-nAd+Rorr**-1))))))
-
-    def EEC_ORRpOx(ang, Rs, Cdlp, nDL, Rct, Qad, nAd, Rorr):
-        """Other model with Faradaic and 2 CPEs"""
-        return Rs + (
-            1
-            / (
-                Cdlp ** 1 * (1j * ang) ** nDL
-                + 1 / (Rct + 1 / ((Qad ** 1 * (1j * ang) ** nAd) + Rorr ** -1))
-            )
-        )
-
-    # Rs + (1 / ((1/(Cdlp**-1*(1j*ang)**-nDL)+(1/(Rct+Aw*(1j*ang)**-0.5+ Rad+ 1/(Qad**-1*(1j*ang)**-nAd+Rorr**-1))))))
-
-    """ Singh et al. jES(2015) studied EIS of the ORR on a RDE, effect of ionomer content and carbon support.
-     no Ionomer
-     Pt black """
-
-    def EEC_Singh2015_3RQ(ang, Rs, Cdlp, nDL, Rct, Qad, nAd, Rorr, R3, Q3, n3):
-        """Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  from Singh et al. Journal of The Electrochemical Society, 162 (6) F489-F498 (2015)"""
-        return (
-            Rs
-            + ((1 / (1 / (Cdlp ** 1 * (1j * ang) ** nDL))) + 1 / Rct) ** -1
-            + ((1 / (1 / (Qad ** 1 * (1j * ang) ** nAd))) + 1 / Rorr) ** -1
-            + ((1 / (1 / (Q3 ** 1 * (1j * ang) ** n3))) + 1 / R3) ** -1
-        )
-
-    def EEC_Singh2015_RQRQR(ang, Rs, Cdlp, nDL, Rct, Qad, nAd, Rorr):
-        """Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  from Singh et al. Journal of The Electrochemical Society, 162 (6) F489-F498 (2015)"""
-        return (
-            Rs
-            + ((1 / (1 / (Cdlp ** 1 * (1j * ang) ** nDL))) + 1 / Rct) ** -1
-            + ((1 / (1 / (Qad ** 1 * (1j * ang) ** nAd))) + 1 / Rorr) ** -1
-        )
-
-    def EEC_Singh2015_RQRWR(ang, Rs, Cdlp, nDL, Rct, Qad, nAd, Rorr):
-        """Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  from Singh et al. Journal of The Electrochemical Society, 162 (6) F489-F498 (2015)
-        with only Warburg as set nAd=0.5 (fixed) during fitting"""
-        return (
-            Rs
-            + ((1 / (1 / (Qad ** 1 * (1j * ang) ** nAd))) + 1 / Rorr) ** -1
-            + ((1 / (1 / (Cdlp ** 1 * (1j * ang) ** nDL))) + 1 / Rct) ** -1
-        )
-
-    # (1/(Qad**1*(1j*ang)**nAd)+Rorr**-1)
-    def EEC_Singh2015_RQRQRW(ang, Rs, Cdlp, nDL, Rct, Qad, nAd, Rorr, sigmaW):
-        """WARBURG elem + Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  +"""
-        return (
-            Rs
-            + ((1 / (1 / (Qad ** 1 * (1j * ang) ** nAd))) + 1 / Rorr) ** -1
-            + (
-                (1 / (1 / (Cdlp ** 1 * (1j * ang) ** nDL)))
-                + 1 / (Rct + ((sigmaW * np.sqrt(2)) / ((1j * ang) ** 0.5)))
-            )
-            ** -1
-        )
-
-    def EEC_Singh2015_RQRQRserW(ang, Rs, Cdlp, nDL, Rct, Qad, nAd, Rorr, sigmaW):
-        """WARBURG elem + Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  +"""
-        return (
-            Rs
-            + ((1 / (1 / (Qad ** 1 * (1j * ang) ** nAd))) + 1 / Rorr) ** -1
-            + ((1 / (1 / (Cdlp ** 1 * (1j * ang) ** nDL))) + 1 / (Rct)) ** -1
-            + ((sigmaW * np.sqrt(2)) / ((1j * ang) ** 0.5))
-        )
-
-    def EEC_Singh2015_RQRWQR(ang, Rs, Cdlp, nDL, Rct, Qad, nAd, Rorr, sigmaW):
-        """WARBURG elem + Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  +"""
-        return (
-            Rs
-            + (
-                (1 / (1 / (Qad ** 1 * (1j * ang) ** nAd)))
-                + 1 / (Rorr + ((sigmaW * np.sqrt(2)) / ((1j * ang) ** 0.5)))
-            )
-            ** -1
-            + ((1 / (1 / (Cdlp ** 1 * (1j * ang) ** nDL))) + 1 / (Rct)) ** -1
-        )
-
-    # TODO BUILT IN THESE BEST MODELS TO STANDARD FITTING
-
-    def EEC_Randles_RWpCPE(ang, Rs, Ls, Cdlp, nDL, Rct, Aw):
-        """R0-p(R1-W1,CPE1)-L0,
-        Bondarenko_Langmuir_2011, Fig6b, adsorption of species"""
-        Zw = Aw * (1 - 1j) / np.sqrt(ang)
-        return (
-            Rs
-            + Ls * (1j * ang)
-            + ((1 / (Cdlp * (1j * ang) ** nDL) ** -1) + (1 / (Rct + Zw))) ** -1
-        )
-
-    def EEC_Randles_RWpCPE_CPE(ang, Rs, Ls, Cdlp, nDL, Rct, Aw, Qad, nAd):
-        """R0-L0-p(R1-W1,CPE1)-CPE2,
-        Bondarenko_Langmuir_2011, Fig6b, adsorption of species"""
-        Zw = Aw * (1 - 1j) / np.sqrt(ang)
-        return (
-            Rs
-            + Ls * (1j * ang)
-            + ((1 / (Cdlp * (1j * ang) ** nDL) ** -1) + (1 / (Rct + Zw))) ** -1
-            + (Qad * (1j * ang) ** nAd) ** -1
-        )
-
-    def EEC_models_color(modname=""):
-        model_color = {
-            "Model(EEC_Randles_RWpCPE)": "gray",
-            "Model(EEC_2CPE)": "cyan",
-            "Model(EEC_2CPEpW)": "orangered",
-            "Model(EEC_RQ_RC_RW)": "red",
-            "Model(EEC_RQ_RC_RQ)": "fuchsia",
-            "Model(Singh2015_RQRWR)": "purple",
-            "Model(Randles_RQRQ)": "gold",
-            "Model(EEC_Randles_RWpCPE_CPE)": "red",
-            "Model(EEC_2CPE_W)": "green",
-            "Model(EEC_2CPEpRW)": "gold",
-        }
-        if modname:
-            return model_color.get(modname, "fuchsia")
-        else:
-            return model_color
-
-    "R0-L0-p(R1,CPE1)-p(R2-Ws0,CPE2)"
-
-    def EEC_2CPEpRWs(ang, Rs, Ls, Cdlp, nDL, Rct, Qad, nAd, Rorr, Z0, tau):
-        """R0-L0-p(R1,CPE1)-p(R2-Ws0,CPE2)',
-        Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  from Singh et al. Journal of The Electrochemical Society, 162 (6) F489-F498 (2015)"""
-        #    Z_Ws = Z_0 / (np.sqrt(1j*ang))
-        Z_Ws = Z0 * np.tanh(np.sqrt(1j * ang * tau)) / np.sqrt(1j * ang * tau)
-        #    Aw*(1-1j)/np.sqrt(ang)
-        return (
-            Rs
-            + Ls * (1j * ang)
-            + ((Cdlp * (1j * ang) ** nDL) + 1 / Rct) ** -1
-            + ((1 / (1 / (Qad ** 1 * (1j * ang) ** nAd))) + 1 / (Rorr + Z_Ws)) ** -1
-        )
-
-    # best_mod2_RCPE =  CustomCircuit(initial_guess=[25,100, 1E-04, 0.7, 1000, 1E-3,0.7, 1E-4 ],
-    #                              circuit='R0-p(R1,CPE1)-p(R2,CPE2)-L0')
-    def EEC_2CPEpRW(ang, Rs, Ls, Cdlp, nDL, Rct, Qad, nAd, Rorr, Aw):
-        """R0-p(R1,CPE1)-p(R2-W2,CPE2)-L0,
-        Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  from Singh et al. Journal of The Electrochemical Society, 162 (6) F489-F498 (2015)"""
-        Zw = Aw * (1 - 1j) / np.sqrt(ang)
-        return (
-            Rs
-            + Ls * (1j * ang)
-            + ((Cdlp * (1j * ang) ** nDL) + 1 / Rct) ** -1
-            + ((1 / (1 / (Qad ** 1 * (1j * ang) ** nAd))) + 1 / (Rorr + Zw)) ** -1
-        )
-
-    def EEC_2CPE_W(ang, Rs, Ls, Cdlp, nDL, Rct, Qad, nAd, Rorr, Aw):
-        """R0-p(R1,CPE1)-p(R2,CPE2)-L0-W0"""
-        Zw = Aw * (1 - 1j) / np.sqrt(ang)
-        return (
-            Rs
-            + Ls * (1j * ang)
-            + ((Cdlp * (1j * ang) ** nDL) + 1 / Rct) ** -1
-            + ((1 / (1 / (Qad ** 1 * (1j * ang) ** nAd))) + 1 / (Rorr)) ** -1
-            + Zw
-        )
-
-    def EEC_1CPE_RC_W(ang, Rs, Ls, Cdlp, nDL, Rct, Cad, Rorr, Aw):
-        """R0-p(R1,CPE1)-p(R2,C2)-L0-W0"""
-        Zw = Aw * (1 - 1j) / np.sqrt(ang)
-        return (
-            Rs
-            + Ls * (1j * ang)
-            + ((Cdlp * (1j * ang) ** nDL) + 1 / Rct) ** -1
-            + ((1 / (1 / (Cad ** 1 * (1j * ang)))) + 1 / (Rorr)) ** -1
-            + Zw
-        )
-
-    # def EEC_RC_RCPE_W(ang, Rs, Ls, Cdlp, nDL, Rct, Cad, nAd, Rorr,Aw):
-    #    '''R0-p(R1,CPE1)-p(R2,C2)-L0-W0 '''
-    #    Zw = Aw*(1-1j)/np.sqrt(ang)
-    #    return Rs + Ls*(1j*ang) + ( (Cdlp*(1j*ang)**nDL) + 1/Rct)**-1 + ((1/(1/(Cad**1*(1j*ang)))) + 1/(Rorr))**-1 + Zw
-
-    "R0-L0-p(R1,CPE1)-p(R2-Ws0,CPE2)"
-
-    def EEC_2CPEpRWs(ang, Rs, Ls, Cdlp, nDL, Rct, Qad, nAd, Rorr, Z0, tau):
-        """R0-L0-p(R1,CPE1)-p(R2-Ws0,CPE2)',
-        Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  from Singh et al. Journal of The Electrochemical Society, 162 (6) F489-F498 (2015)"""
-        #    Z_Ws = Z_0 / (np.sqrt(1j*ang))
-        Z_Ws = Z0 * np.tanh(np.sqrt(1j * ang * tau)) / np.sqrt(1j * ang * tau)
-        #    Aw*(1-1j)/np.sqrt(ang)
-        return (
-            Rs
-            + Ls * (1j * ang)
-            + ((Cdlp * (1j * ang) ** nDL) + 1 / Rct) ** -1
-            + ((1 / (1 / (Qad ** 1 * (1j * ang) ** nAd))) + 1 / (Rorr + Z_Ws)) ** -1
-        )
-
-    # best_mod2_RWpCPE =  CustomCircuit(initial_guess=[25,100, 1E-04, 0.7, 400,  4E2,1E-3,0.7, 1E-4 ],
-    #                              circuit='R0-p(R1,CPE1)-p(R2-W2,CPE2)-L0')
-    def EEC_RQ_RQ_RW(ang, Rs, Ls, Cdlp, nDL, Rct, Qad, nAd, Rorr, R3, Aw):
-        """R0-p(R1,CPE1)-p(R2,C2)-p(R3,W3)-L0,
-        Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  from Singh et al. Journal of The Electrochemical Society, 162 (6) F489-F498 (2015)"""
-        Zw = Aw * (1 - 1j) / np.sqrt(ang)
-        return (
-            Rs
-            + Ls * (1j * ang)
-            + ((1 / (1 / (Cdlp * (1j * ang) ** nDL))) + 1 / Rct) ** -1
-            + ((1 / (1 / (Qad * (1j * ang) ** nAd))) + 1 / Rorr) ** -1
-            + (1 / Zw + 1 / R3) ** -1
-        )
-
-    # best_mod3_midC_W3 =  CustomCircuit(initial_guess=[25,56, 0.7E-04, 0.7, 50,1E-2,560,2.7E02, 1E-5 ],
-    #                              circuit='R0-p(R1,CPE1)-p(R2,C2)-p(R3,W3)-L0')
-
-    def EEC_RQ_RQ_RQ(ang, Rs, Ls, Cdlp, nDL, Rct, Qad, nAd, Rorr, R3, Q3, n3):
-        """R0-p(R1,CPE1)-p(R2,C2)-p(R3,CPE3)-L0
-        Other model with 2 (Q1,Q3) and 3 R (Rs,R1,R3)  from Singh et al. Journal of The Electrochemical Society, 162 (6) F489-F498 (2015)"""
-        return (
-            Rs
-            + Ls * (1j * ang)
-            + ((1 / (1 / (Cdlp * (1j * ang) ** nDL))) + 1 / Rct) ** -1
-            + ((1 / (1 / (Qad * (1j * ang) ** nAd))) + 1 / Rorr) ** -1
-            + ((1 / (1 / (Q3 * (1j * ang) ** n3))) + 1 / R3) ** -1
-        )
-
-    # best_mod3_midC_CPE3 =  CustomCircuit(initial_guess=[25,56, 0.7E-04, 0.7, 50,1E-2,560,1.7E-03,0.5, 1E-5 ],
-    #                              circuit='R0-p(R1,CPE1)-p(R2,C2)-p(R3,CPE3)-L0')
-
-    # EEC_Randles_RWpCPE_CPE
-    def new_models_list():
-        new_v21_model_index_list = [
-            (1, Model(EEC_Randles_RWpCPE, name="EEC_Randles_RWpCPE"), 40),
-            # (2, Model(EEC_2CPE,name='EEC_2CPE'),50),
-            (3, Model(EEC_2CPEpRW, name="EEC_2CPEpRW"), 120),
-            (4, Model(EEC_RQ_RQ_RW, name="EEC_RQ_RQ_RW"), 100),
-            (5, Model(EEC_RQ_RQ_RQ, name="EEC_RQ_RQ_RQ"), 100),
-            (6, Model(EEC_Randles_RQRQ, name="Randles_RQRQ"), 60),
-            (7, Model(EEC_2CPEpRWs, name="EEC_2CPEpRWs"), 50),
-            (8, Model(EEC_2CPE_W, name="EEC_2CPE_W"), 50),
-            (9, Model(EEC_Randles_RWpCPE_CPE, name="EEC_Randles_RWpCPE_CPE"), 50),
-            (10, Model(EEC_1CPE_RC_W, name="EEC_1CPE_RC_W"), 50),
-        ]
-
-        #    EEC_1CPE_RC_W
-        #               (8, Model(EEC_Singh2015_3RQ,name='Singh2015_R3RQ'),120),
-        #               (9, Model(EEC_Singh2015_RQRQRW,name='EEC_Singh2015_RQRQRW'),120),
-        #               (10, Model(EEC_Singh2015_RQRQRserW,name='EEC_Singh2015_RQRQRserW'),120),
-        #               (11, Model(EEC_Singh2015_RQRWQR,name='EEC_Singh2015_RQRWQR'),120)]
-        return new_v21_model_index_list
-
-    def get_new_models_names():
-        model_names = [i[1].name for i in new_models_list()]
-        print(model_names)
-        return model_names
-
-    def get_strings_model_list():
-        print([i[1].name for i in new_models_list()])
-
-    def EEC_models_color():
-        model_color = {
-            "Model(EEC_Randles_RWpCPE)": "cyan",
-            "Model(EEC_2CPE)": "aquamarine",
-            "Model(EEC_2CPEpW)": "orangered",
-            "Model(EEC_RQ_RQ_RW)": "gray",
-            "Model(EEC_RQ_RQ_RQ)": "green",
-            "Model(Randles_RQRQ)": "gold",
-            "Model(EEC_2CPEpRWs)": "pink",
-            "EEC_2CPE_W": "gold",
-        }
-        return model_color
-
-    def EEC_Singh2015_RQRQ(ang, Rs, Cdlp, nDL, Rct, Qad, nAd):
-        """Other model with 2 (R/Q-CPEs)from Singh et al. Journal of The Electrochemical Society, 162 (6) F489-F498 (2015)"""
-        return (
-            Rs
-            + ((1 / (1 / (Cdlp ** 1 * (1j * ang) ** nDL))) + 1 / Rct) ** -1
-            + ((1 / (1 / (Qad ** 1 * (1j * ang) ** nAd)))) ** -1
-        )
-
-    # Rs + (Rct**-1+ (Cdl**1*(1j*ang)**nDL)**-1)**-1 +  ((1/(1/(Qad**1*(1j*ang)**nAd))))**-1
-    # Rs + (1/ (Cdlp**1*(1j*ang)**nDL + 1/Rct) + (1/(Qad**1*(1j*ang)**nAd))
-
-    # !!! Switch position of Rorr with Rct
-    # Rs + (1 / ((1/(Cdlp**-1*(1j*ang)**-nDL)+(1/(Rct+Aw*(1j*ang)**-0.5+ Rad+ 1/(Qad**-1*(1j*ang)**-nAd+Rorr**-1))))))
-    def EEC_Singh2015_RQR(ang, Rs, Cdlp, nDL, Rct):
-        """Other model with 2 (R/Q-CPEs)from Singh et al. Journal of The Electrochemical Society, 162 (6) F489-F498 (2015)"""
-        return Rs + (Rct ** -1 + (Cdlp ** 1 * (1j * ang) ** nDL) ** -1) ** -1
-
-    # Rs + ((1/(Cdlp*(1j*ang)**nDL)**-1)+1/Rct)**-1
-    # Rs + ((1/(1/(Cdlp**1*(1j*ang)**nDL))) + 1/Rct)**-1
-    #           Rs + (1/Cdlp**1*(1j*ang)**nDL+ 1/Rct)
-
-    def EIS_ORR_fit(PAR_EIS_data):
-        PAR_EIS_data["-Z Imag"] = -1 * PAR_EIS_data["Z Imag"]
-        Zre, Zim = PAR_EIS_data["Z Real"], PAR_EIS_data["Z Imag"]
-        gr.plot(x="Z Real", y="-Z Imag", kind="scatter")
-
-    def ORR_model_7_pars(ang, Rs, Cdlp, nDL, Rct, Qad, nAd, Rorr):
-        #    ang,Rs,Cdlp,nDL,Rct,Qad,nAd,Rorr = **args
-        EEC_choices = {
-            "EEC_ORRpOx": Rs
-            + (
-                1
-                / (
-                    Cdlp ** 1 * (1j * ang) ** nDL
-                    + 1 / (Rct + 1 / ((Qad ** 1 * (1j * ang) ** nAd) + Rorr ** -1))
-                )
-            ),
-            "EEC_Singh2015_RQRQR": Rs
-            + (1 / Cdlp ** 1 * (1j * ang) ** nDL + 1 / Rct)
-            + (1 / (Qad ** 1 * (1j * ang) ** nAd) + Rorr ** -1),
-            "EEC_Singh2015_RQRQ": Rs
-            + (1 / Cdlp ** 1 * (1j * ang) ** nDL + 1 / Rct)
-            + (1 / (Qad ** 1 * (1j * ang) ** nAd)),
-        }
-        return EEC_choices
-
-    def old_models():
-        OLD_v20_model_index_list = [
-            (1, Model(EEC_Singh2015_RQR, name="Singh2015_RQR"), 40),
-            (2, Model(EEC_Singh2015_RQRQ, name="Singh2015_RQRQ"), 50),
-            (3, Model(EEC_Singh2015_RQRQR, name="Singh2015_RQRQR"), 120),
-            (4, Model(EEC_ORRpOx, name="Bandarenka_2011_RQRQR"), 100),
-            (6, Model(EEC_Singh2015_RQRQR, name="Singh2015_RQRWR"), 100),
-            (7, Model(EEC_Randles_RQRQ, name="Randles_RQRQ"), 60),
-            (8, Model(EEC_Singh2015_3RQ, name="Singh2015_R3RQ"), 120),
-            (9, Model(EEC_Singh2015_RQRQRW, name="EEC_Singh2015_RQRQRW"), 120),
-            (10, Model(EEC_Singh2015_RQRQRserW, name="EEC_Singh2015_RQRQRserW"), 120),
-            (11, Model(EEC_Singh2015_RQRWQR, name="EEC_Singh2015_RQRWQR"), 120),
-        ]
-
-
-if __name__ == "__main__":
-    print("All models: \n", Model_Collection(standard_models=[]))
-    mc = Model_Collection()
-    print("\nSelected Models:\n", mc)

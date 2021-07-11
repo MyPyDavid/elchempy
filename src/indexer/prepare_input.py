@@ -7,39 +7,35 @@ Created on Sat Jan 25 18:48:27 2020
 """
 
 
-import logging
 import datetime as dt
 import re
 from pathlib import Path
-import hashlib
+
+# import hashlib
 
 import pandas as pd
 import numpy as np
-import sys
-import subprocess
 
+# import sys
+import subprocess
+import glob
 
 from file_py_helper.find_folders import FindExpFolder
 from file_py_helper.file_functions import FileOperations
-from file_py_helper.FindSampleID import GetSampleID
 
-form .. import EXP_FOLDER
+# from file_py_helper.FindSampleID import GetSampleID
+#  form .. import EXP_FOLDER # FIXME
+EXP_FOLDER = FindExpFolder("VERSASTAT").DataDir
 
-if __name__ == "__main__":
-    from RunEC_classifier import EC_classifier_multi_core
-
-elif "prepare_input" in __name__:
-    # print(f'Name: {__name__} for file {__file__}')
-    from .RunEC_classifier import EC_classifier_multi_core
+from .RunEC_classifier import EC_classifier_multi_core
 
 import logging
 
 logger = logging.getLogger(__name__)
-
 #%%
 
 
-def RunEC(ExpDirs, EXP_FOLDER, mode =''):
+def RunEC(ExpDirs, EXP_FOLDER, mode=""):
     for month, explst in ExpDirs:
         alldirs = explst[::]
         print(alldirs)
@@ -50,7 +46,7 @@ def RunEC(ExpDirs, EXP_FOLDER, mode =''):
             try:
                 saved = pd.read_csv(dest_plot_folder.joinpath("STATUS_OVV.csv"))
                 status = pd.merge(
-                    alldrs, saved, on="dir", how="outer", indicator="indicator_column"
+                    alldirs, saved, on="dir", how="outer", indicator="indicator_column"
                 )
                 CALC_PARS_svd = pd.read_csv(
                     glob.glob(dest_plot_folder.joinpath("CALC_PARS_ORR_OVERVIEW*"))[-1]
@@ -72,7 +68,7 @@ def RunEC(ExpDirs, EXP_FOLDER, mode =''):
                 [[i, 0, 0, 0, dt.datetime.now()] for i in alldirs],
                 columns=["dir", "N2", "ORR", "HPRR", "Last_run"],
             )
-            status = pd.merge(alldrs, saved, on="dir", indicator="indicator_column")
+            status = pd.merge(alldirs, saved, on="dir", indicator="indicator_column")
 
             CALC_PARS_svd, ORR_JKIN_svd, Cdl_fit_svd, HPRR_svd = (
                 pd.DataFrame([]),
@@ -409,16 +405,6 @@ def CleanUpCrew(
         print("Nothing deleted, log empty")
 
 
-#    return removed_log
-
-
-if __name__ == "__main__":
-    #    logger = StartLogging()
-    EC_index = MainEC.EC_Analysis_Input(True)
-
-else:
-    pass
-#    logger = StartLogging()
 #    FolderOps.FindExpFolder('VERSASTAT').IndexDir.mkdir(parents=True,exist_ok=True)
 #    self.index = EC_index
 #    EC_index = ECRunOVV(load=1).index.sort_values('PAR_date',ascending=False)

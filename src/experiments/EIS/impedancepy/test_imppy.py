@@ -351,9 +351,7 @@ def check_semicircle(_key, spec):
     _semi = []
     yax = ["-Zim"][0]
     popt, pcov = curve_fit(semicircle_func, spec.DATA_Zre, spec["DATA_" + yax])
-    spec[f"Z_lin_a{_slope}"] = semicircle_func(
-        spec.DATA_Zre,
-    )
+    spec["Z_lin_a{_slope}"] = semicircle_func(spec.DATA_Zre)
 
 
 def compare_O2_N2():
@@ -435,11 +433,8 @@ def choose_test(
     freqlim=1e5,
     export_plot=False,
 ):
-    #    name = 'O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20'
     jos2 = [i for i in list(all_test_data.keys()) if name in i and spec_type in i]
-    #    spec = all_test_data.get('O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20')['spectrum']
     _key = jos2[0]  # TODO FILE SELECTOR TODO
-    #    print(_key)
     spec = all_test_data.get(_key)["spectrum"]
     spec = spec.iloc[1::]
     spec = check_Warburg(_key, spec, dest_path=dest_path, export_plot=export_plot)
@@ -1003,7 +998,7 @@ def test_circuit_predict():
     fig, ax = plt.subplots(figsize=(5, 5))
     plot_nyquist(ax, Z_predict, fmt="-")
 
-    fig, ax = plt.figure(figsize=(8, 8))
+    fig, ax1 = plt.figure(figsize=(8, 8))
     plot_nyquist(ax1, Z, fmt="o")
     gs = fig.add_gridspec(6, 4)
     ax1 = fig.add_subplot(gs[:3, 0:2])

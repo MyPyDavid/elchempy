@@ -1,21 +1,26 @@
-import sys
+# import sys
 from pathlib import Path
-from collections import namedtuple
-from datetime import datetime
-import numpy as np
+
+# from collections import namedtuple
+# from datetime import datetime
 import decimal
 
-from scipy.stats import linregress
-import matplotlib.pyplot as plt
+# import os
+# import multiprocessing
+# from functools import partial
+# from itertools import repeat
 
-import os
-import multiprocessing
-from functools import partial
-from itertools import repeat
+import numpy as np
 import pandas as pd
 
-from file_py_helper.find_folders import FindExpFolder
-from file_py_helper.file_functions import FileOperations
+
+import scipy
+
+# from scipy.stats import linregress
+import matplotlib.pyplot as plt
+
+# from file_py_helper.find_folders import FindExpFolder
+# from file_py_helper.file_functions import FileOperations
 
 # print('File', __file__,'\nName;',__name__)
 if __name__ == "__main__":
@@ -117,7 +122,7 @@ def add_mean_Jcorr_col(
     return Te_mean
 
 
-def _testing():
+def _debugging(self):
     seg, rpm_n, O2_join, O2_chrono_Ring, ORR_dest_dir_file = (
         self.segment,
         self.RPM_DAC,

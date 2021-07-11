@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import datetime
 import matplotlib.font_manager
 
+from file_py_helper.find_folders import FindExpFolder
 
 # if __name__ == '__main__':
 #    from models import EEC_models_color

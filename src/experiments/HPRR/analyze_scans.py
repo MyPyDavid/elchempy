@@ -1,3 +1,34 @@
+# import sys
+from pathlib import Path
+
+# from collections import namedtuple
+from datetime import datetime
+import numpy as np
+
+import scipy
+from scipy.stats import linregress
+import matplotlib.pyplot as plt
+
+# import os
+# import multiprocessing
+# from functools import partial
+# from itertools import repeat
+import pandas as pd
+
+
+# from file_py_helper.find_folders import FindExpFolder
+# from file_py_helper.file_functions import FileOperations
+# from .plotting import N2_plot_Cdl_sweeptype_scatter, N2_plot_Cdl_scans_scanrate
+
+# print("File", __file__, "\nName;", __name__)
+# if __name__ == "__main__":
+# pass
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def HPRR_scan(All_HPRR, HPRR_ovv_file, dest_dir):
     #    All_HPRR,dest_dir = Samples_ovv, Path(HPRR_ovv_file.Dest_dir.iloc[0])
     #    EvRHE = 'E_AppV_RHE'

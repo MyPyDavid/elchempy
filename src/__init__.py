@@ -14,12 +14,13 @@ from config import config
 __package_name__ = "ECpy"
 
 
-class FindExpFolder:
+class _mock_FindExpFolder:
     """Mock in place class to maintain logging functionality"""
 
     def __init__(self, arg):
         if arg == "VERSASTAT":
-            self.DestDir = Path(__file__).parent.resolve()
+            self.DestDir = Path.home().resolve().joinpath(".ECpy_files")
+            self.PostDir = self.DestDir.joinpath("PostEC")
         else:
             raise ValueError
 
@@ -32,16 +33,17 @@ try:
     EXP_FOLDER = FindExpFolder("VERSASTAT")
 
 except ImportError:
+    FindExpFolder = _mock_FindExpFolder
     _format = _format + " : importerror : "
     print(
         f'File helper import error, please install...\nLocal logger file: {FindExpFolder("VERSASTAT").DestDir}'
     )
 except ModuleNotFoundError:
+    FindExpFolder = _mock_FindExpFolder
     _format = _format + " : modulenotfounderror: "
     print(
         f'File helper module not found, please install...\nLocal logger file:{FindExpFolder("VERSASTAT").DestDir}'
     )
-
 
 logger = logging.getLogger(__package_name__)
 # set log level
@@ -63,11 +65,12 @@ ch.setFormatter(formatter)
 # add the handlers to the logger
 logger.addHandler(fh)
 logger.addHandler(ch)
-
-
 # create console handler and set level to debug
 logger.info("=== Started logging {0}... ===".format(__package_name__))
 logger.debug("=== Started logging {0}... ===".format(__package_name__))
-
 # TODO main list
 # TODO add logger.config file
+# TODO remove file-py-helper dependency:
+#   local Data Dir and destination paths handling
+#   local version control and retrieval at runtime
+#   local Electrode properties loading at __init__

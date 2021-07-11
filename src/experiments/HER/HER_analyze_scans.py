@@ -1,26 +1,27 @@
-import sys
+# import sys
 from pathlib import Path
-from collections import namedtuple
+
+# from collections import namedtuple
 from datetime import datetime
 import numpy as np
-
+import pandas as pd
 from scipy.stats import linregress
 
 # from scipy.interpolate import UnivariateSpline
-from scipy import constants
+# from scipy import constants
 from scipy.signal import savgol_filter
-from scipy.optimize import curve_fit
+
+# from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
-import os
-import multiprocessing
-from functools import partial
-from itertools import repeat
-import pandas as pd
+# import os
+# import multiprocessing
+# from functools import partial
+# from itertools import repeat
 
-print("File", __file__, "\nName;", __name__)
-if __name__ == "__main__":
-    pass
+from ..EC_DataLoader import CreateCV
+
+from file_py_helper.file_functions import FileOperations
 
 import logging
 
@@ -47,7 +48,7 @@ def HER_scan(fit_run_arg, electrode_properties={}, **HER_kwargs):
     #    file_ovv_row[HER_kwargs.get('dest_dir_col')]
     SampleID = file_ovv_row["SampleID"]
 
-    HER_CVs, HER_action = create_CVs(file_ovv)
+    HER_CVs, HER_action = CreateCV(file_ovv)
     HER_CV = HER_CVs.loc[HER_CVs.Type_action.str.contains("Cyclic Voltammetry")].query(
         'ScanRate_calc < 0.2 & SampleID != "Pt_ring"'
     )
@@ -341,7 +342,7 @@ def HER_calc(HER_ovv, HER_out_fn, PathDB, plot_HER=True):
     HER_Pars = []
     fig, ax = plt.subplots(figsize=(10, 10))
     for a, gr in HER_ovv.groupby(by="PAR_file"):
-        grCV, grInfo = create_CVs(gr)
+        grCV, grInfo = CreateCV(gr)
         grCV = grCV.loc[grCV.Type == "Cyclic Voltammetry"]
         grOVV = HER_ovv.loc[HER_ovv["PAR_file"] == str(a)]
         if not grCV.empty or not grOVV.empty:
@@ -370,7 +371,7 @@ def HER_calc(HER_ovv, HER_out_fn, PathDB, plot_HER=True):
                     )
                     HER_Pars.append([grOVV])
     HERpOut = pd.concat([i[0] for i in HER_Pars])
-    FolderOps.FileOperations.CompareHashDFexport(HERpOut, HER_out_fn)
+    FileOperations.CompareHashDFexport(HERpOut, HER_out_fn)
     if plot_HER:
         print("HER output to: %s" % HER_out_fn)
         plt.savefig(HER_out_fn.with_suffix(".png"))

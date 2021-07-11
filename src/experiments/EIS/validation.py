@@ -13,52 +13,20 @@ from scipy import stats
 import logging
 from pathlib import Path
 
+from .impedancepy.impedance import validation as imppy_validation
+from .impedancepy.impedance.models.circuits.fitting import rmse
+from .impedancepy.impedance.models.circuits.elements import (
+    circuit_elements,
+    K,
+)  # noqa
+
 # freq,Zdata,Z_linKK,res_real,res_imag = EIS_data_valid['Frequency(Hz)'].values,EIS_data_valid.DATA_Z.values,EIS_data_valid.linKK_Z.values,EIS_data_valid.linKK_resRe.values,EIS_data_valid.linKK_resIm.values
 
-
-if __name__ == "__main__":
-    # from eis_run_ovv import EIS_Spectrum
-    from repos.imppy.impedance import validation as imppy_validation
-    from repos.imppy.impedance.models.circuits.fitting import rmse
-    from repos.imppy.impedance.models.circuits.elements import (
-        circuit_elements,
-        K,
-    )  # noqa
-
-elif Path(__file__).parent.name == "EIS" and __name__ == "validation":
-
-    from repos.imppy.impedance import validation as imppy_validation
-    from repos.imppy.impedance.models.circuits.fitting import rmse
-    from repos.imppy.impedance.models.circuits.elements import (
-        circuit_elements,
-        K,
-    )  # noqa
-
-elif __name__.startswith("ECpy"):
-    from ECpy.experiments.EIS.repos.imppy.impedance import (
-        validation as imppy_validation,
-    )
-    from ECpy.experiments.EIS.repos.imppy.impedance.models.circuits.fitting import rmse
-    from ECpy.experiments.EIS.repos.imppy.impedance.models.circuits.elements import (
-        circuit_elements,
-        K,
-    )  # noqa
-
-else:
-    print("file:", Path(__file__), "name: ", Path(__name__))
-    from experiments.EIS.repos.imppy.impedance import validation as imppy_validation
-    from experiments.EIS.repos.imppy.impedance.models.circuits.fitting import rmse
-    from experiments.EIS.repos.imppy.impedance.models.circuits.elements import (
-        circuit_elements,
-        K,
-    )  # noqa
-
-# else:
-#     print('file:', Path(__file__), 'name: ',Path(__name__))
-#     from repos.imppy.impedance import validation as imppy_validation
-#     from repos.imppy.impedance.models.circuits.fitting import rmse
-#     from repos.imppy.impedance.models.circuits.elements import circuit_elements, K  # noqa
-
+# if __name__ == "__main__":
+# from eis_run_ovv import EIS_Spectrum
+# from repos.imppy.impedance import validation as imppy_validation
+# from repos.imppy.impedance.models.circuits.fitting import rmse
+import logging
 
 _logger = logging.getLogger(__name__)
 
@@ -215,7 +183,9 @@ class KramersKronigValidation:
             )
         )
 
-    def calc_meta_info(self):
+    def calc_meta_info(
+        self, linKK_trimming_std_factor, res_max, prefit_suffix, _prefit
+    ):
         linKK_limit_Re = np.min(
             [
                 res_max,

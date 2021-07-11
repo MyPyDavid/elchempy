@@ -11,7 +11,7 @@ def draw_circuits():
     import SchemDraw.elements as ShemElem
 
     d = SchemDraw.Drawing(inches_per_unit=0.5)
-    ##    op = d.add(ShemElem.OPAMP)
+    op = d.add(ShemElem.OPAMP)
     #    d.add(ShemElem.LINE, d='left', xy=op.in2, l=d.unit/4)
     #    d.add(ShemElem.LINE, d='down', l=d.unit/5)
     ##    d.add(ShemElem.GND)
@@ -41,6 +41,6 @@ def ImpedancePyTest():
     initial_guess = [0.01, 0.01, 100, 0.01, 0.05, 100, 1]
     Bondarenko = "Rs-p(E1,s(R1,p(R3,E2)"
 
-    circuit = CustomCircuit(
-        Bondarenko, initial_guess=initial_guess, name="Bondarenko_2011"
-    )
+    # circuit = CustomCircuit(
+    #     Bondarenko, initial_guess=initial_guess, name="Bondarenko_2011"
+    # )

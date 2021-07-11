@@ -103,7 +103,7 @@ def Table1(r, r_H):
     return pd.DataFrame(table1["geometry"]).T
 
 
-def R_curv(kappa_e, H_adj, K_adj):
+def R_curv(kappa_e, H_adj, K_adj, delta_c, omega):
     term1 = delta_c(omega) / (kappa_e * (kappa_e + delta_c(omega)))
     term2 = (delta_c(omega) * (3 * kappa_e + delta_c(omega))) / (
         2 * kappa_e ** 2 * (kappa_e + delta_c(omega)) ** 2

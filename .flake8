@@ -11,15 +11,33 @@ exclude =
 
 extend-exclude=
     src/PostEC/*
-    src/PostEC/_bak
-    *_bak
+
+    *_bak.py
+    _bak_*.py
+    _old_*.py
     *_not_*
     *_Conflict.py
     *_old.py
-
+# src/PostEC/_bak
+# src/experiments/EIS/bak
 ignore = D203,W503
 max-complexity = 9
 max-line-length = 88
-extend-ignore = E203
+extend-ignore =
+    E115, E128,
+    E202, E203, E125, E128,
+    E222, E226, E231, E251,
+    E303, E306,
+    F523, E261, E265, E266,
+    E301, E302, E305,
+    F401, E402, F402,
+    E501, F502, F524, F541,
+    F601, W605,
+    E712, E713, E722, E741
+    F811, F841,
+    C901
+
+
+
 per-file-ignores =
     #src/PostEC/PAR_postEC_v6_old.py

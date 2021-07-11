@@ -4,7 +4,7 @@ Created on Wed Jul  7 15:56:24 2021
 @author: DW
 """
 
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class BaseRunner(ABC):

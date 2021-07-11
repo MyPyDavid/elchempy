@@ -130,12 +130,12 @@ def read_eis_excel():
 # all_test_data = read_eis_excel()
 def choose_test(
     all_test_data,
-    name="O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20",
+    name="O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20",  # pragma: allowlist secret
     reduce=False,
 ):
     all_test_data = read_eis_excel()
     spec = all_test_data.get(
-        "O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20"
+        "O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20"  # pragma: allowlist secret
     )["spectrum"]
     N_freqs = len(spec)
     Z_exp = spec.DATA_Z.values
@@ -179,12 +179,6 @@ def standard_DRT(N_freqs=81):
     return Z_exp, gamma_exact
 
 
-def local_standard_input():
-    #    N_freqs, Z_exp = add
-    N_freqs, Z_exp = choose_test(all_test_data, reduce=False)
-    Z_exact, gamma_exact = standard_DRT(N_freqs)
-
-
 #    N_freqs, Z_exp =  choose_test(all_test_data,reduce=False)
 def DP_DRT_analysis(Z_exp):
     #%%
@@ -202,7 +196,9 @@ def DP_DRT_analysis(Z_exp):
     tau_vec = 1.0 / freq_vec
     omega_vec = 2.0 * pi * freq_vec
     #
-    # define the matrices that calculate the impedace from DRT, i.e., Z_re = A_re * gamma, Z_im = A_im * gamma
+    # define the matrices that calculate the impedace from DRT,
+    #  i.e., Z_re = A_re * gamma,
+    # Z_im = A_im * gamma
     A_re = compute_DRT.A_re(freq_vec)
     A_im = compute_DRT.A_im(freq_vec)
 
@@ -477,7 +473,7 @@ def DP_DRT_analysis(Z_exp):
     return DIP_out
 
 
-def DP_DRT_plots(DIP_out, savepath=""):
+def DP_DRT_plots(Z_exp, DIP_out, savepath=""):
     #    plt.semilogy(L_ser_vec, linewidth=4, color="black")
     #    plt.semilogy(freg_vec, linewidth=4, color="black")
     #    plt.semilogy(C_const_vec, linewidth=4, color="black")
@@ -491,103 +487,7 @@ def DP_DRT_plots(DIP_out, savepath=""):
     plot_DRT(DIP_out.tau_vec_DIP, DIP_out.gamma_DIP)
 
 
-#    print('distance_opt= ', distance_vec[index_opt])
-
-
-#    analyze_results()
-
-
-def train_model():
-    model = vanilla_model()
-
-    # initialize following variables
-    zeta = torch.randn(N, N_zeta)
-    loss_vec = np.array([])
-    distance_vec = np.array([])
-    lambda_vec = np.array([])
-
-    # optimize the neural network
-    learning_rate = 1e-5
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    _lambda = 100
-    # max iterations
-    max_iters = int(100001)
-    gamma_NN_store = torch.zeros((max_iters, N_freqs))
-    R_inf_NN_store = torch.zeros((max_iters, 1))
-    C_const_NN_store = torch.zeros((max_iters, 1))
-
-    for t in range(max_iters):
-        # Forward pass: compute predicted y by passing x to the model.
-        gamma = model(zeta)
-
-        # Compute the loss
-        loss = loss_fn(
-            gamma, Z_exp_re_torch, Z_exp_im_torch, A_re_torch, A_im_torch, _lambda
-        )
-        # save it
-        loss_vec = np.append(loss_vec, loss.item())
-
-        # store gamma
-        gamma_NN = gamma[:, 0:-1].detach().reshape(-1)
-        gamma_NN_store[t, :] = gamma_NN
-
-        # store R_inf
-        R_inf_NN_store[t, :] = gamma[:, -1].detach().reshape(-1)
-
-        # Compute the distance
-        distance = math.sqrt(torch.sum((gamma_NN - gamma_exact_torch) ** 2).item())
-        # save it
-        distance_vec = np.append(distance_vec, distance)
-
-        # and print it
-        if not t % 10000:
-            print("iter=", t, "; loss=", loss.item(), "; distance_NOT USED=", distance)
-
-        # zero all gradients (purge any cache)
-        optimizer.zero_grad()
-
-        # compute the gradient of the loss with respect to model parameters
-        loss.backward()
-
-        # Update the optimizer
-        optimizer.step()
-
-    return distance_vec, loss_vec, gamma_NN_store, R_inf_NN_store
-
-
-def analyze_results():
-    index_opt = np.argmin(distance_vec)
-    index_early_stop = np.flatnonzero(np.abs(np.diff(loss_vec)) < 5e-2)
-
-    gamma_DIP_torch_opt = gamma_NN_store[index_opt, :]
-    R_inf_DIP_torch_opt = R_inf_NN_store[index_opt, :]
-
-    gamma_DIP_opt = gamma_DIP_torch_opt.detach().numpy()
-    R_DIP_opt = R_inf_DIP_torch_opt.detach().numpy()
-
-    if len(index_early_stop):
-        gamma_DIP_torch_early_stop = gamma_NN_store[index_early_stop[0], :]
-        gamma_DIP = gamma_DIP_torch_early_stop.detach().numpy()
-        R_DIP = R_inf_NN_store[index_early_stop[0], :]
-        R_DIP = R_DIP.detach().numpy()
-        print("distance_early_stop = ", distance_vec[index_early_stop[0]])
-    else:
-        gamma_DIP = gamma_DIP_opt
-        R_DIP = R_DIP_opt
-
-    Z_DIP = R_DIP + np.matmul(A_re, gamma_DIP) + 1j * np.matmul(A_im, gamma_DIP)
-
-    print("total number parameters = ", compute_DRT.count_parameters(model))
-
-    print("distance_opt= ", distance_vec[index_opt])
-
-    plot_loss()
-    plot_err_iter()
-    plot_imp()
-    plot_DRT()
-
-
-def plot_test():
+def plot_test(DP_DRT_out):
     Z_DIP, gamma_DIP, freq_vec, tau_vec, loss_vec, N_freqs, R_DIP = DP_DRT_out[:-1]
 
 
@@ -638,7 +538,7 @@ def plot_loss(loss_vec, save=None):
     plt.close()
 
 
-def plot_R_C_L(save=None):
+def plot_R_C_L(loss_vec, index_early_stop, index_opt, save=None):
     plt.semilogy(loss_vec, linewidth=4, color="black")
     plt.semilogy(
         np.array([index_early_stop[0], index_early_stop[0]]),
@@ -695,7 +595,7 @@ def plot_R_C_L(save=None):
     plt.close()
 
 
-def plot_err_iter(save=None):
+def plot_err_iter(distance_vec, index_early_stop, index_opt, save=None):
     plt.semilogy(distance_vec, linewidth=4, color="black")
     plt.semilogy(
         np.array([index_early_stop[0], index_early_stop[0]]),

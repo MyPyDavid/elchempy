@@ -18,16 +18,7 @@ import pandas as pd
 
 
 # print(f'GP_DRT_FITTING: Name: {__name__} for file {__file__}')
-
-if __name__ == "__main__":
-    import GP_DRT_Ciucci_Liu_2019 as GP_DRT
-elif __name__ == "experiments.EIS.GP_DRT_fitting":
-    from . import GP_DRT_Ciucci_Liu_2019 as GP_DRT
-else:
-    if "EIS" == Path(__file__).parent.name:
-        import GP_DRT_Ciucci_Liu_2019 as GP_DRT
-    else:
-        from . import GP_DRT_Ciucci_Liu_2019 as GP_DRT
+from . import GP_DRT_Ciucci_Liu_2019 as GP_DRT
 
 
 def reduce_Z_data(spec):
@@ -205,7 +196,7 @@ def compare_O2_N2():
 # all_test_data = read_eis_excel()
 def choose_test(
     all_test_data,
-    name="O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20",
+    name="O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20",  # pragma: allowlist secret
     reduce=False,
 ):
 
@@ -214,7 +205,7 @@ def choose_test(
         for i in list(all_test_data.keys())
         if "JOS2_288_758mV_1500rpm_3" in i and "raw" in i
     ]
-    #    spec = all_test_data.get('O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20')['spectrum']
+    #    spec = all_test_data.get('O2_EIS-range_1500rpm_JOS2_899_499mV_1500rpm_spectrumfit_v20')['spectrum'] # pragma: allowlist secret
     _key = jos2[0]
     spec = all_test_data.get(_key)["spectrum"]
     check_Warburg(spec)
@@ -430,44 +421,6 @@ def run_GP_DRT_fit(DRT_data_KKvalid, **kwargs):
         res_fit_params.update({"GP_DRT_json_res": str(_json_path_res)})
 
     return _Z_exp, _Z_star, res_fit_params, res_fit_arrays
-
-
-def savefig_plot():
-    savefig = Path.cwd().joinpath("testing_data", _file)
-    if savefig:
-        _Z_exp = pd.DataFrame(data=zip(Z_exp, freq_vec), columns=["Z_exp", "freq_vec"])
-        _Z_exp = _Z_exp.assign(
-            **{
-                "Z_exp_real": _Z_exp["Z_exp"].to_numpy().real,
-                "Z_exp_imag": _Z_exp["Z_exp"].to_numpy().imag,
-            }
-        )
-        _savepath1 = savefig.with_name(savefig.name + "_GP_Z_exp").with_suffix(".xlsx")
-        _savepath2 = savefig.with_name(savefig.name + "_GP_DRT_star").with_suffix(
-            ".xlsx"
-        )
-        _Z_exp.to_excel(_savepath1)
-        _Z_star = pd.DataFrame(
-            zip(freq_vec_star, gamma_vec_star, Sigma_gamma_vec_star, Z_im_vec_star),
-            columns=[
-                "freq_vec_star",
-                "gamma_vec_star",
-                "Sigma_gamma_vec_star",
-                "Z_im_vec_star",
-            ],
-        )
-        _Z_star.to_excel(_savepath2)
-
-    plot_nyquist(Z_exp, freq_vec, savefig=savefig)
-    plot_GP_DRT(freq_vec_star, gamma_vec_star, Sigma_gamma_vec_star, savefig=savefig)
-    plot_imag(
-        freq_vec,
-        Z_exp,
-        freq_vec_star,
-        Z_im_vec_star,
-        Sigma_gamma_vec_star,
-        savefig=savefig,
-    )
 
 
 def plot_nyquist(Z_exp, freq_vec, savefig=""):

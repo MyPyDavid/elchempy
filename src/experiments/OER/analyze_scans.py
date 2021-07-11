@@ -1,8 +1,24 @@
+from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
+
+import numpy as np
+import pandas as pd
+import scipy
+from scipy.stats import linregress
+import matplotlib.pyplot as plt
+
+from file_py_helper.find_folders import FindExpFolder
+from file_py_helper.ExtraInfo import EC_Properties
+from .. import EvRHE
+
+
 # All_OER = All_ovv.query('EXP == "OER"')
 # All_OER, OER_ovv_file, dest_dir = (Samples_ovv_cv,OER_ovv_file, Path(OER_ovv_file.Dest_dir.iloc[0]))
 #    OER_file_index =  OER_scan(Samples_ovv_cv,OER_ovv_file, Path(OER_ovv_file.Dest_dir.iloc[0]))
 def OER_scan(All_OER, OER_ovv_file, dest_dir):
-    CollEff, SA_disk, SA = WE_SA_collection_eff("PINE-ring").values()
+    CollEff, SA_disk, SA = EC_Properties.WE_SA_collection_eff("PINE-ring").values()
     mA = 1000
     if All_OER.empty:
         print("!! Critical OER empty: %s!!" % dest_dir)
@@ -254,18 +270,18 @@ def OER_scan(All_OER, OER_ovv_file, dest_dir):
             [i for i in OER_out_lst], sort=False, ignore_index=True
         )
         OER_pars_base = OER_dest_dir.joinpath(OER_fn + "_pars.xlsx")
-        OER_pars_target = FolderOps.FileOperations.CompareHashDFexport(
-            OER_pars_out, OER_pars_base
-        )
-        index_info_OER_TAFEL = pd.DataFrame(
-            {
-                "PAR_file": OER_PAR_fn,
-                "DestFile": OER_pars_target,
-                "Type_output": "OER_Jkin_Tafel",
-                "Type_exp": "OER",
-            },
-            index=[0],
-        )
+        # OER_pars_target = FolderOps.FileOperations.CompareHashDFexport(
+        #     OER_pars_out, OER_pars_base
+        # )
+        # index_info_OER_TAFEL = pd.DataFrame(
+        #     {
+        #         "PAR_file": OER_PAR_fn,
+        #         "DestFile": OER_pars_target,
+        #         "Type_output": "OER_Jkin_Tafel",
+        #         "Type_exp": "OER",
+        #     },
+        #     index=[0],
+        # )
 
     except Exception as e:
         print("No successfull OER: {0}".format(e))
@@ -283,7 +299,7 @@ def OER_scan(All_OER, OER_ovv_file, dest_dir):
     return index_info_OER_TAFEL
 
 
-def OER_calc(HER_ovv, HER_out_fn, PathDB, plot_OER=True):
+def OER_calc(HER_ovv, HER_out_fn, PathDB, create_CVs, plot_OER=True):
     HER_Pars = []
     fig, ax = plt.subplots(figsize=(10, 10))
     for a, gr in HER_ovv.groupby(by="PAR_file"):
@@ -317,101 +333,10 @@ def OER_calc(HER_ovv, HER_out_fn, PathDB, plot_OER=True):
                     )
                     HER_Pars.append([grOVV])
     HERpOut = pd.concat([i[0] for i in HER_Pars])
-    FolderOps.FileOperations.CompareHashDFexport(HERpOut, HER_out_fn)
+    # FolderOps.FileOperations.CompareHashDFexport(HERpOut, HER_out_fn) # FIXME some EXPORT FUNC
     if plot_OER:
         print("OER output to: %s" % HER_out_fn)
         plt.savefig(HER_out_fn.with_suffix(".png"))
 
 
 #        HERpOut.to_excel(HER_out_fn)
-
-
-def old_OER():
-    #    print('OER RPM',1500)
-    ###### ====== Exporting all Segments of Scans of .PAR files to OER subfolder ========== #######
-    for nm, gr in All_OER.groupby(["PAR_file", "Segment #", "Sweep_Type"]):
-        OER_OutFile = OER_dest_dir.joinpath(
-            nm[0].stem + "_" + str(int(nm[1])) + "_" + nm[2]
-        )
-        #        os.path.join(OER_dest_dir,os.path.basename(os.path.splitext(nm[0])[0])+'_'+str(int(nm[1]))+'_'+nm[2]+'.xlsx')
-        if not os.path.isfile(OER_OutFile):
-            print(nm)
-            gr.to_excel(OER_OutFile.with_suffix(".xlsx"))
-    ###### ====== Merging CV with Chronoe for Selectivity Exp ========== #######
-    for nmBase, grBase in All_OER.groupby(["BaseName"]):
-        grF = grBase.groupby(["File"])
-        if (
-            len(grF) == 2
-            and "Chronoamperometry" in grBase.Type_action.unique()
-            and "Cyclic Voltammetry (Multiple Cycles)" in grBase.Type_action.unique()
-        ):
-            print(nmBase)
-            OER_CV = grBase.query(
-                'Type_action == "Cyclic Voltammetry (Multiple Cycles)"'
-            )
-            OER_CV_SegMin = int(OER_CV["Segment #"].unique().min())
-            OER_Chrono = grBase.query('Type_action == "Chronoamperometry"')
-            OER_Chrono = OER_Chrono.loc[OER_Chrono["Segment #"] >= OER_CV_SegMin]
-            OER1, OER2 = OER_CV.set_index("Elapsed Time(s)"), OER_Chrono.set_index(
-                "Elapsed Time(s)"
-            )
-            OER_Both = OER1.join(OER2, lsuffix="_disk", rsuffix="_ring", how="outer")
-            temp = OER_Both.loc[
-                :, ["Segment #_disk", EvRHE + "_disk", "I(A)_disk", "I(A)_ring"]
-            ].interpolate()
-            OER_Both = temp.rename(
-                columns=dict(
-                    zip(
-                        ["I(A)_disk", "I(A)_ring"],
-                        ["I(A)_diskInterP", "I(A)_ringInterP"],
-                    )
-                )
-            )
-            OER_Both = OER_Both.assign(
-                **{EvRHE + "_disk_diff": OER_Both[EvRHE + "_disk"].diff()}
-            )
-            #            , 'I(A)_diskInter' : OER_Both['I(A)_disk'].interpolate()})
-            OER_Both = OER_Both.assign(
-                **{
-                    "SweepType": np.where(
-                        OER_Both[EvRHE + "_disk_diff"] > 0,
-                        "anodic",
-                        np.where(OER_Both[EvRHE + "_disk_diff"] < 0, "cathodic", "NA"),
-                    ),
-                    "FarEff": OER_Both["I(A)_ringInterP"]
-                    / (OER_Both["I(A)_ringInterP"] * CollEff),
-                }
-            )
-            for nmBoth, grBoth in OER_Both.groupby(["Segment #_disk", "SweepType"]):
-                if nmBoth[1] == "NA":
-                    continue
-                BothOutFile = OER_dest_dir.joinpath(
-                    nmBase + "_Bipot_" + str(int(nmBoth[0])) + "_%s" % nmBoth[1]
-                )
-                print(BothOutFile)
-                #                if not os.path.isfile()
-                grBoth.loc[
-                    :, [EvRHE + "_disk", "jmAcm-2_ring", "jmAcm-2_disk"]
-                ].to_excel(BothOutFile.with_suffix(".xlsx"))
-                fig, axOER = plt.subplots(1, figsize=(8, 6))
-                axOER.set_title(nmBase + "(%s,%s)" % (nmBoth[0], nmBoth[1]))
-                grBoth.plot(x=EvRHE + "_disk", y=["jmAcm-2_disk"], ax=axOER)
-                try:
-                    grBoth[[EvRHE + "_disk", "jmAcm-2_ring"]].dropna().plot(
-                        x=EvRHE + "_disk", y=["jmAcm-2_ring"], ax=axOER
-                    )
-                except Exception as e:
-                    print(e)
-                #                plt.show()
-                plt.savefig(
-                    OER_OutFile.with_suffix(".png"), dpi=300, bbox_inches="tight"
-                )
-                plt.close()
-            OER_Both.loc[:, [EvRHE + "_disk", "jmAcm-2_ring", "jmAcm-2_disk"]].plot(
-                x=EvRHE + "_disk", y=["jmAcm-2_ring", "jmAcm-2_disk"]
-            )
-    return "OER"
-
-
-# All_OER = All_ovv.query('EXP == "OER"')
-# All_HER, HER_ovv_file, dest_dir = (Samples_ovv_cv,HER_ovv_file, Path(HER_ovv_file.Dest_dir.iloc[0]))

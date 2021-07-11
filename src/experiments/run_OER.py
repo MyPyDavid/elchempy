@@ -10,9 +10,10 @@ from functools import partial
 from itertools import repeat
 import pandas as pd
 
+from OER import analyze_scans
+from EC_DataLoader.CreateCV import create_CVs
 
-if __name__ == "__main__":
-    pass
+from file_py_helper.file_functions import FileOperations
 
 import logging
 
@@ -30,7 +31,9 @@ def ORR_prepare_ovv_dest(ovv_exp_grp, **OER_kwargs):
     gr_ovv = gr_ovv.assign(
         **{
             "OER_dest_dir": [
-                Path(i).joinpath(f"OER_v{FileOperations.version}")
+                Path(i).joinpath(
+                    f"OER_v{FileOperations.version}"
+                )  # FIXME implement getting version at runtime
                 for i in gr_ovv.Dest_dir.to_numpy()
             ]
         }
@@ -69,77 +72,6 @@ def ORR_prepare_ovv_dest(ovv_exp_grp, **OER_kwargs):
     return gr_ovv, gr_ovv_disk
 
 
-def OER(ovv_exp_grp, **OER_kwargs):
-    #%%
-    ###### === Analyze the ORR experiments ==== #######
-    #        exp,gr_ovv,ovv = 'ORR',ExpTypes_gr.get_group('ORR'),ovv
-    #        if 'O2' in Gases and not 'N2_act' in Experiments:
-    #            print('N2 BACKGROUND SCAN IS MISSING FOR THIS ORR EXPERIMENT.\nFailed: %s'%exp_dir)
-    #            sORR = 1
-    #        elif 'O2' in Gases and 'N2_act' in Experiments: # O2 and N2 changed
-    #        O2_activity, O2_out_ovv, O2_Jcalc_ovv, overall_rows   = pd.DataFrame([]),pd.DataFrame([]),pd.DataFrame([]), pd.DataFrame([])
-    #    index_ORR, index_out, faillst = [], [], []
-    #    ovv_all, gr_ovv_disk = ORR_prepare_ovv_dest(ovv_exp_grp, **ORR_kwargs)
-
-    run_args_raw = [
-        Meta(
-            Path(pf),
-            grp,
-            ovv_all.loc[ovv_all.PAR_date_day.isin(grp.PAR_date_day.unique())],
-            *ORR_get_N2_BG(ovv_all, pf, grp),
-        )
-        for pf, grp in gr_ovv_disk.groupby(by="PAR_file")
-    ]
-
-    _n2faillst = [i[0] for i in orr_run_args_raw if i[-1].empty]
-
-    orr_run_args = [i for i in orr_run_args_raw if not i[-1].empty]
-
-    #%%
-    if gr_ovv_disk.empty:
-        return logger.warning(
-            "ORR attemp failed for {0} because ovv empty".format(
-                gr_ovv.Dest_dir.unique()
-            )
-        )
-    #    logger.warning('ORR disk OVV empty')
-    #%%
-    multi_par_fit = True
-    if multi_par_fit:
-        fit_export_EV_all = []
-        orr_kwargs_iter = repeat(ORR_kwargs)
-        try:
-            logger.info(
-                f"ORR orr_run_group_ovv START multiprocessing {multi_par_fit} for len{len(orr_run_args)}"
-            )
-            pool_size = os.cpu_count() - 2
-            if "linux" in sys.platform:
-                #                os.system('taskset -cp 0-%d %s' % (pool_size, os.getpid()))
-                os.system("taskset -p 0xff %d" % os.getpid())
-            #                os.sched_setaffinity(0,{i for i in range(pool_size)})
-            #            for chunk in orr_run_args[:pool_size if pool_size > 2 else 1]:
-            with multiprocessing.Pool(pool_size) as pool:
-                PF_fit_starmap_with_kwargs(
-                    pool, Jkin_calc_multi, orr_run_args, orr_kwargs_iter
-                )
-        #                    fit_export_EV_all.append(fit_export_EV_all_chunck)
-        except Exception as e2:
-            logger.error(
-                f"ORR run multiprocessing erroe: {e2}, len out({len(fit_export_EV_all)})"
-            )
-
-    else:
-        fit_export_EV_all = []
-        for fit_run_arg in orr_run_args:
-
-            try:
-                #                fit_run_arg = orr_run_args[1]
-                Jkin_calculations(fit_run_arg, **ORR_kwargs)
-            #                fit_export_EV_all.append([fit_export_EV])
-            except Exception as e:
-                logger.warning(f"ORR attemp failed for {fit_run_arg[0]} because {e}")
-
-
 def OER(exp, gr_ovv, ovv):
     ###### === Analyze the OER experiments ==== #######
     #        DestDir = Path(gr_ovv.Dest_dir.unique()[0])
@@ -149,7 +81,7 @@ def OER(exp, gr_ovv, ovv):
     DestDir = Path(gr_ovv.Dest_dir.unique()[0])
     #        gr_ovv = ExpTypes_gr
     OER_index_lst, OER_pars, faillst = [], [], []
-    for OER_file, OER_ovv_file in failed_ovv.groupby(by="PAR_file"):
+    for OER_file, OER_ovv_file in gr_ovv.groupby(by="PAR_file"):
         try:
             #                ring = ovv.loc[ovv.PAR_date.isin(OER_ovv_file.PAR_date.values) & ovv.Electrode.str.contains('Pt_ring' )]
             ring = ovv.loc[
@@ -172,7 +104,7 @@ def OER(exp, gr_ovv, ovv):
                         )
                     )
                 if not Samples_ovv_cv.empty:
-                    OER_file_index = OER_scan(
+                    OER_file_index = analyze_scans.OER_scan(
                         Samples_ovv_cv,
                         OER_ovv_file,
                         Path(OER_ovv_file.Dest_dir.iloc[0]),
@@ -197,7 +129,7 @@ def OER(exp, gr_ovv, ovv):
             faillst.append([OER_file, "OER exception {0}".format(e)])
     failed_ovv = gr_ovv.loc[gr_ovv.PAR_file.isin([i[0] for i in faillst])]
     OER_index = pd.concat([i for i in OER_index_lst], ignore_index=True)
-    OER_pars_target = FolderOps.FileOperations.CompareHashDFexport(
+    OER_pars_target = FileOperations.CompareHashDFexport(
         OER_index, DestDir.joinpath("OER_Pars_index.xlsx")
     )
     return OER_index

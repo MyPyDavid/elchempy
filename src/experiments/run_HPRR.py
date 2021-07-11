@@ -1,4 +1,15 @@
-def HPRR(exp, gr_ovv, ovv):
+from pathlib import Path
+import pandas as pd
+
+from EC_DataLoader.CreateCV import create_CVs
+from HPRR.analyze_scans import HPRR_scan
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def run(exp, gr_ovv, ovv):
     ###### === Analyze the HPRR experiments ==== #######
     #        if 'HPRR' in Experiments:
     #        exp,ExpTypes_gr.get_group('HPRR'),ovv
