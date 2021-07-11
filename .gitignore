@@ -3,8 +3,8 @@
 
 ### Ignore some local files -DW ###
 *_onlylocal_*.py
-*/_bak_*.py
-*/_old_*.py
+**/_bak_*.py
+**/_old_*.py
 
 
 
