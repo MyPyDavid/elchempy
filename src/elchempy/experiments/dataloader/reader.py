@@ -8,26 +8,7 @@ import pandas as pd
 import logging
 logger = logging.getLogger(__name__)
 
-
 from parsers import read_PAR_file
-
-def _dev():
-    _n2files = Path.cwd().parent.parent.parent.parent.joinpath('data/raw').rglob('*N2*par')
-    return _n2files
-
-def _test_read():
-    files = _dev()
-    results = []
-    for filepath in files:
-        DR = DataReader(str(filepath))
-        results.append(DR)
-        actions = DR.actions
-        data = DR.data
-    # if True:
-        data.plot(x='E(V)',y='I(A)', title=filepath.name)
-        if any('EIS' in name for name in actions.Name.unique()):
-            data.plot(x='Z Real',y='Z Imag', title=filepath.name)
-
 
 def _drop_cols_from_data_segment():
     ''' Columns keys to possibly drop from data DataFrame'''
@@ -39,9 +20,12 @@ def _drop_cols_from_data_segment():
 
 class DataReader:
     '''
+
+    Wrapper for parsers in a class
+    and handles the
+
     Class could be extended for reading out data
     from multiple source files.
-
 
     '''
 
@@ -56,7 +40,7 @@ class DataReader:
 
          self.filepath = filepath
 
-         self.parser_instance = None
+         self.parser = None
          self.actions = pd.DataFrame()
          self.data = pd.DataFrame()
 
@@ -64,9 +48,9 @@ class DataReader:
             filesize = filepath.stat().st_size
             if filesize < max_bytesize and filepath.suffix in self.supported_filetypes:
 
-                parser_instance, actions, data = self.read_file(self.filepath)
+                parser, actions, data = self.read_file(self.filepath)
 
-                self.parser_instance= parser_instance
+                self.parser= parser
                 self.actions = actions
                 self.data = data
 
@@ -77,7 +61,7 @@ class DataReader:
          else:
             logger.warn("File does not exist:\n{filepath}")
 
-    def read_file(self, filepath):
+    def read_file(self, filepath, data_body_key_default = ['segment1']):
         '''
 
         Parameters
@@ -97,22 +81,40 @@ class DataReader:
 
         actions = pd.DataFrame()
         data = pd.DataFrame()
-        parser_instance = None
+        parser = None
 
         suffix = filepath.suffix
         if suffix in self.supported_filetypes:
 
             if '.par' in suffix:
-                parser_instance = read_PAR_file(filepath)
-                actions = pd.DataFrame(parser_instance.actions).T
-                data = pd.DataFrame(data=parser_instance.data_body['segment1'], columns=parser_instance.data_keys)
+                parser = read_PAR_file(filepath)
+                # this parser has dictionary attributes which need to cast in to DataFrames
+
+                actions = pd.DataFrame(parser.actions).T
+
+                p_db_keys = parser.data_body.keys()
+
+                if set(p_db_keys) > set(data_body_key_default):
+                    _extra_keys = set(p_db_keys) -set(data_body_key_default)
+                    logger.warn('Unexpected extra keys found in parser,{", ".join(map(str,_extra_keys))}')
+
+                _data = []
+                for dbkey in p_db_keys:
+                    # if there are multiple data segments found in the parser
+                    # is most likely not the case and contains segment1 only
+                    df = pd.DataFrame(data=parser.data_body[dbkey], columns=parser.data_keys)
+                    if len(p_db_keys) > 1:
+                        df =  df.assign(**{'parser_data_boy_key' : dbkey})
+                    _data.append(df)
+                data = pd.concat(_data)
+
             elif '.other' in suffx:
                 pass
 
         else:
             logger.warn('Filetype is not supported, not in {", ".join(map(str,self.supported_filetypes))} ')
 
-        return parser_instance, actions, data
+        return parser, actions, data
 
     def __repr__(self):
         _name = self.filepath.name

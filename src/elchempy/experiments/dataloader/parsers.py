@@ -8,18 +8,17 @@ from pathlib import Path
 from html.parser import HTMLParser
 
 
-
-
 class ParserError(ValueError):
     '''unable to parse this file'''
 
-
-
-
 def read_PAR_file(filepath):
     '''
+    Special parser for Versatstudio ".par" files
+
     opens the file, cleans the lines
     initializes the Parser and feeds the data
+    returns the Parser Object
+
     '''
     try:
         with open(filepath) as fp:

@@ -9,35 +9,6 @@ from reader import DataReader
 
 from converters import get_current_density, get_potential_vs_RE, get_RPM_from_DAC_V
 
-
-def _dev():
-    from pathlib import Path
-    _n2files = Path.cwd().parent.parent.parent.parent.joinpath('data/raw').rglob('*par')
-    return _n2files
-
-def _dev_test_read():
-    files = _dev()
-    results = []
-    # for filepath in files:
-    while True:
-        filepath = next(files)
-
-        results.append(ElchemData(filepath))
-
-    if False:
-        DR = DataReader(filepath)
-        actions = DR.actions
-        data = DR.data
-
-        data = assign_electrochemical_data_columns(data,
-                              RHE_potential = 2,
-                              geometric_SA = 20,
-                              electrode_type = ''
-                              )
-        data = match_actions_data_segments(actions, data)
-
-        results.append((DR, data, actions))
-
 class ElchemData:
     '''
     This class contains all functions
@@ -255,7 +226,6 @@ class ElchemData:
                                                         actions: pd.DataFrame
                                                                                 ):
         '''
-
         Parameters
         ----------
         actions : pd.DataFrame

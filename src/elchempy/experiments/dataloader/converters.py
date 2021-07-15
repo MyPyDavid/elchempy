@@ -47,13 +47,13 @@ def get_RPM_from_DAC_V(DAC_V, cell_number = 0):
     conv2 = 1 / 1000
 
     cell_number = 0
-    if "test_PAR_file" in kwargs:
-        PAR_file_str = str(kwargs["test_PAR_file"])
-        if "cell" in PAR_file_str:
-            try:
-                cell_number = int(PAR_file_str.split("cell")[-1][0])
-            except:
-                pass
+    # if "test_PAR_file" in kwargs:
+    #     PAR_file_str = str(kwargs["test_PAR_file"])
+    #     if "cell" in PAR_file_str:
+    #         try:
+    #             cell_number = int(PAR_file_str.split("cell")[-1][0])
+    #         except:
+    #             pass
     use_conv = 1
     rpm_list = [0, 200, 400, 900, 1500]
     v3l = [0, 0.055, 0.11, 0.2475, 0.245, 0.405, 0.410, 0.675]
