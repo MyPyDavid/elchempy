@@ -40,11 +40,22 @@ logger = logging.getLogger(__name__)
 
 # t1 = '/mnt/DATA/EKTS_CloudStation/CloudStation/Experimental data/Raw_data/VERSASTAT/2018-01-Jan/19.01.2018_DW18_bipot_0.5MH2SO4_RRDE22434/OCP_RHE.par'
 # tt2 = PAR_file_parser(t1)
-
+#%%
 
 class PAR_file_parser:
-    """Input is a filename
-    output self.parse_result is a dict"""
+    '''
+    Parses a filename
+
+    Parameters
+    ----------
+    PARf : Path
+        a Path object to a .par file
+
+    Returns
+    ---------
+        parse_result : dict
+    '''
+
 
     def __init__(self, PARf, destdir=""):
         self.destdir = destdir
@@ -319,6 +330,8 @@ class PAR_file_parser:
 
 
 class PAR_file_introspector:
+
+
     def __init__(self, PARf):
         self.PARf = PARf
         self._get_hash()

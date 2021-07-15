@@ -1,8 +1,11 @@
+''' #TODO rewrite this module '''
+
 import pandas as pd
 import numpy as np
 import re
 
-import bs4 as BeautifulSoup
+from scipy import stats
+# import bs4 as BeautifulSoup
 from pathlib import Path
 
 
@@ -12,7 +15,7 @@ from .read_file import (
     collect_data_pars_segment,
     take_hash,
 )
-from .CreateCV import check_lin
+# from .CreateCV import check_lin
 
 from file_py_helper.file_functions import FileOperations
 
@@ -36,6 +39,20 @@ logger = logging.getLogger(__name__)
 #    else:
 #        check = False
 #    return intercept, slope,rsquared,check
+
+def check_lin(colX, colY):
+    #    data = pd.DataFrame([])
+    #    colX,colY = OCP_DATA['Elapsed Time(s)'],OCP_DATA['E(V)']
+    #    data['x'] = colX
+    #    data['y'] = colY
+    #    res = sm.ols( 'data.y ~ data.x', data=data).fit()
+    #    X = sm.add_constant(x), mod = sm.OLS(y,X),res = mod.fit()
+    #    intercept, slope,rsquared = res.params[0],res.params[1],res.rsquared
+    slope, intercept, r_value, p_value, std_err = stats.linregress(colX, colY)
+    rsquared = r_value ** 2
+    check = True if np.abs(slope) < 1e-5 else False
+    return intercept, slope, rsquared, check
+
 
 
 def get_RHE_OCP(ovv):

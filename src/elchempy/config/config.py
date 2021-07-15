@@ -4,7 +4,7 @@ import pathlib
 
 from .. import __package_name__
 
-logger = logging.getLogger(__package_name__)
+logger = logging.getLogger(__name__)
 
 # import pandas as pd
 # pd.options.display.max_rows = 10

@@ -1,3 +1,7 @@
+'''
+#TODO refactor this module
+'''
+
 import numpy as np
 from pathlib import Path
 import pandas as pd

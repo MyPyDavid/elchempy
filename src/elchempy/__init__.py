@@ -5,13 +5,15 @@ Created on Sat Jan 25 13:43:14 2020
 
 @author: zmg
 """
-# import sys
+import sys
+import warnings
+
+__package_name__ = "elchempy"
+
 from pathlib import Path
 import logging
 
-from config import config
-
-__package_name__ = "ECpy"
+from .config import config
 
 
 class _mock_FindExpFolder:
@@ -19,7 +21,7 @@ class _mock_FindExpFolder:
 
     def __init__(self, arg):
         if arg == "VERSASTAT":
-            self.DestDir = Path.home().resolve().joinpath(".ECpy_files")
+            self.DestDir = Path.home().resolve().joinpath(f".{__package_name__}")
             self.PostDir = self.DestDir.joinpath("PostEC")
         else:
             raise ValueError
@@ -68,6 +70,38 @@ logger.addHandler(ch)
 # create console handler and set level to debug
 logger.info("=== Started logging {0}... ===".format(__package_name__))
 logger.debug("=== Started logging {0}... ===".format(__package_name__))
+
+
+# This code is written for Python 3.
+if sys.version_info[0] != 3:
+    logger.error("raman_fitting requires Python 3.")
+    sys.exit(1)
+
+# Let users know if they're missing any hard dependencies
+hard_dependencies = ("numpy", "pandas", "scipy", "matplotlib", "lmfit")
+soft_dependencies = {}
+missing_dependencies = []
+
+import importlib
+
+for dependency in hard_dependencies:
+    if not importlib.util.find_spec(dependency):
+        missing_dependencies.append(dependency)
+
+if missing_dependencies:
+    raise ImportError(f"Missing required dependencies {missing_dependencies}")
+
+for dependency in soft_dependencies:
+    if not importlib.util.find_spec(dependency):
+        warnings.warn(
+            f"Missing important package {dependency}. {soft_dependencies[dependency]}"
+        )
+
+del hard_dependencies, soft_dependencies, dependency, missing_dependencies
+
+from .api import *
+# import experiments
+
 # TODO main list
 # TODO add logger.config file
 # TODO remove file-py-helper dependency:
