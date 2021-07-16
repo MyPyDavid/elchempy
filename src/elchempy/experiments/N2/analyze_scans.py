@@ -1,4 +1,12 @@
+'''
+# TODO split functions
+keep logic for calculations seperate from file handling/ conditions/
+make calculations in simple functions with most basic args, kwargs only
+
+'''
+
 # import sys
+
 from pathlib import Path
 
 # from collections import namedtuple
@@ -8,19 +16,21 @@ import numpy as np
 from scipy.stats import linregress, zscore
 import matplotlib.pyplot as plt
 
-# import os
-# import multiprocessing
-# from functools import partial
-# from itertools import repeat
 import pandas as pd
 
 
-# from file_py_helper.find_folders import FindExpFolder
+# TODO phase out file_py_helper dependencies
 from file_py_helper.file_functions import FileOperations
-from .plotting import N2_plot_Cdl_sweeptype_scatter, N2_plot_Cdl_scans_scanrate
+
 
 # print("File", __file__, "\nName;", __name__)
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    import plotting as n2plotting
+else:
+    import plotting as n2plotting
+
+n2plotting.N2_plot_Cdl_sweeptype_scatter
+n2plotting.N2_plot_Cdl_scans_scanrate
 # pass
 
 import logging
@@ -77,6 +87,8 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, N2_FileName, **N2_kwargs):
     #    RRDEloading = 0.09  # 0.09 mg_cat on PINE_disk (0.238 cm2)
     #    GeoArea = WE_SA_collection_eff('PINE')['Disk_cm2']
 
+def _dev_N2_file_info():
+    ''' prepares destination file names and folder'''
     SampleID = N2_ovv_file["SampleID"].values[0]
     Loading_name = N2_ovv_file["Loading_name"].values[0]
     Electrolyte = N2_ovv_file["Electrolyte"].values[0]
@@ -101,53 +113,9 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, N2_FileName, **N2_kwargs):
     else:
         pass
         # N2_CVs, N2_actions = create_CVs(N2_ovv_file)
-    N2_CVs = N2_CVs.loc[N2_CVs.ActionId == 38]
 
-    ###### ====== Exporting all Segments of Scansr ========== #######
-    #  N2_CVs.groupby('Scan Rate (V/s)').plot(x=EvRHE,y='jmAcm-2',kind='scatter')
-    # Add ,'Sweep_Type'  to N2gr.groupby to differentiate for cathodic and anodic. '_'+nm[2]+
-    #    for nm, gr in N2gr.groupby(['File','Segment #']):
-    #            continue
-    #            N2_OutFile = N2_dest_dir.joinpath(Path(nm[0]).stem+'_'+str(int(nm[1]))+'.xlsx')
-    ##            os.path.join(N2_dest_dir,os.path.basename(os.path.splitext(nm[0])[0])+'_'+str(int(nm[1]))+'.xlsx')
-    ##            if N2_OutFile.is_file():
-    #            gr.loc[:,[EvRHE,'jmAcm-2','Elapsed Time(s)']].to_excel(N2_OutFile)
-    #            print('Exported Excel file:',nm)
-    if N2_CVs.empty:
-        logger.error("N2_scans emtpy: !!-----!! skipping {0}".format(N2_FileName))
-        N2_scan, Cdl_fit, Cdl_PARS = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-        return N2_scan, Cdl_fit, Cdl_PARS
 
-    if N2_CVs.query(
-        'PAR_exp == "N2_act" & ScanRate_calc < 0.02 & SampleID != "Pt_ring"'
-    ).empty:
-        #           ovv[~ovv['SampleID'].str.contains('Pt_ring')].loc[:,['PAR_exp' == 'N2']].empty:
-        logger.warning(
-            "N2_scans emtpy: !! N2 background Missing!! {0}".format(N2_FileName)
-        )
-
-    try:
-
-        #        grB = N2_CVs.groupby(by=['Gas','Type','EXP'])
-        #        for scan in grB.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','N2_act')):
-        #            print(scan)
-        #                grA.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','0.1'))
-        #        grB.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','N2_act')).to_csv(N2_dest_dir.joinpath('%s.csv' %N2_fn))
-        grA = N2_CVs.groupby(by=["Gas", "Type_action", "PAR_exp", "Scan Rate (V/s)"])
-
-        def get_scanrates(N2_CVs, grA):
-
-            try:
-                ScanRates = np.array([i[-1] for i in grA.groups])
-
-            #            ScanRates = grB.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','N2_act'))['Scanrate'].unique()
-            except Exception as e:
-                logger.warning("N2_scans: ScanRates {0},{1}".format(e, grA.groups))
-                ScanRates = N2_CVs["Scan Rate (V/s)"].unique()
-            return ScanRates
-
-        ScanRates = get_scanrates(N2_CVs)
-        #                ScanRates = grB.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)'))['ScanRate_calc'].unique()
+    def calculate_Cdl():
         ###### ====== Analyze the Capacity (Cdl) of the N2 scan ========== #######
         Cdl_out = pd.DataFrame({EvRHE: []})
         lst_dct, index_out = [], []
@@ -258,7 +226,7 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, N2_FileName, **N2_kwargs):
                         )
             #                    N2_Cdl_ovv.assign(**{'ScanRate': SR, f'j_{sweep}' : j_Cdl})
             Cdl_scans = pd.concat(_Cdl_scans_plot)
-
+        def exportingstuff():
             N2_plot_Cdl_scans_scanrate(
                 Cdl_scans, N2_dest_dir.joinpath(f"N2_ScanRates_{N2_fn}.png")
             )
@@ -272,6 +240,7 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, N2_FileName, **N2_kwargs):
             #            index_info = {'PAR_file': N2_FileName, 'DestFile': Cdl_fn_out, 'Type_output': 'N2_Cdl_data'}
             #            index_out.append(index_info)
             #                Cdl_pars.to_csv(Cdl_fn_out)
+        def cdl_lin():
             N2_CV_datafilenames = ", ".join(
                 [Path(i).name for i in Cdl_data["N2_CV_datafile"].unique()]
             )
@@ -281,6 +250,9 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, N2_FileName, **N2_kwargs):
             Cdl_anod = Cdl_data.loc[:, ["j_anodic", "E_V", "ScanRate"]].dropna(
                 axis=0, how="any"
             )
+
+
+
             fitl = []
 
             _meta_info = {
@@ -505,7 +477,7 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, N2_FileName, **N2_kwargs):
     #                                                                                    last_fastN2_scan[
     #                                                                                        'PAR_file'].unique()[-1], :]
     #                Last_fastN2_scan.get_group()
-    except Exception as e:
+    def _except():
         logger.warning("N2 scan failure: %s" % e)
         preN2_scan = grA.get_group(
             ("N2", "Cyclic Voltammetry (Multiple Cycles)", "N2_act", ScanRates.min())
@@ -531,85 +503,9 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, N2_FileName, **N2_kwargs):
     #                                                                                    last_fastN2_scan[
     #                                                                                        'PAR_file'].unique()[-1], :]
     #                Last_fastN2_scan.get_group()
-    #            N2_scan = grA.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','0.1'))
-    ### === Prepare the background N2 scan (10 mV/s) for ORR with exactly 2000 rows === ###
-    preN2_scan = preN2_scan.drop_duplicates()
 
-    if float(ScanRates.min()) > 0.01:
-        N2_factor = float(ScanRates.min()) / 0.01
-        N2_scan = preN2_scan.assign(
-            **{"j A/cm2": preN2_scan.loc[:, "j A/cm2"] / N2_factor}
-        )
-        logger.warning(
-            f"!! N2 background wrong scan rate: {ScanRates.min()}, so j divided by {N2_factor} for {N2_fn}"
-        )
-    #                N2_scan.loc[:,'j A/cm2'] = N2_scan['j A/cm2']/N2_factor
-    #                pd.DataFrame([ScanRates.min()])
-    try:
-        lenpreN2 = len(preN2_scan)
-        N2_scan = preN2_scan
-        if lenpreN2 > 2001:
-            logger.warning(
-                "!! N2 scan more than 2000 data points.. {0} !! len({1})".format(
-                    N2_fn, lenpreN2
-                )
-            )
-            #            N2_act_BG_over2000 = Path(N2_dest_dir.parent).joinpath(N2_fn+'_test2000.xlsx')# test
-            #            preN2_scan.to_excel(N2_act_BG_over2000)
-            #            logger.warning('!! N2 scan more than 2000 data points.. file saved {0} !! len({1})'.format(N2_fn,lenpreN2))
-            preN2_scan = preN2_scan.loc[
-                preN2_scan.PAR_file == preN2_scan["PAR_file"].unique()[-1], :
-            ]
-            if len(preN2_scan["Segment #"].unique()) > 1:
-                for i in preN2_scan["Segment #"].unique():
-                    if len(preN2_scan.loc[preN2_scan["Segment #"] == i]) == 2000:
-                        N2_scan = preN2_scan.loc[preN2_scan["Segment #"] == i]
-            elif len(preN2_scan["Segment #"].unique()) == 1:
-                N2_scan = preN2_scan.drop_duplicates()
-        elif len(N2_scan) != 2000:
-            logger.warning(
-                "!! N2 scan not 2000 data points.. {0} !! len({1})".format(
-                    N2_fn, len(N2_scan)
-                )
-            )
-            #            print('!! N2 scan less than 2000 data points.. !! %s' %lenpreN2)
-            N2_scan = preN2_scan.loc[
-                preN2_scan.PAR_file == preN2_scan["PAR_file"].unique()[0], :
-            ]
-            if len(preN2_scan["Segment #"].unique()) == 1:
-                for i in preN2_scan["Segment #"].unique():
-                    if len(preN2_scan.loc[preN2_scan["Segment #"] == i]) == 2000:
-                        N2_scan = preN2_scan.loc[preN2_scan["Segment #"] == i]
 
-        elif lenpreN2 < 2000:
-            logger.warning(
-                "!! N2 scan less than 2000 data points..  {0} !! len({1})".format(
-                    N2_fn, lenpreN2
-                )
-            )
-            N2_scan = preN2_scan.loc[
-                preN2_scan.PAR_file == preN2_scan["PAR_file"].unique()[0], :
-            ]
-            if len(preN2_scan["Segment #"].unique()) == 1:
-                for i in preN2_scan["Segment #"].unique():
-                    if len(preN2_scan.loc[preN2_scan["Segment #"] == i]) == 2000:
-                        N2_scan = preN2_scan.loc[preN2_scan["Segment #"] == i]
-        #                            if len(preN2_scan.loc[preN2_scan['Segment #'] == i]) != 2000:
-        #                            N2_scan = pd.DataFrame([])
-        #                            print('!! Wrong size for N2 background!!')
-        else:
-            logger.info(
-                "!! N2 scan has 2000 data points..success  {0} !! len({1})".format(
-                    N2_fn, lenpreN2
-                )
-            )
-            N2_scan = preN2_scan
-    except Exception as e:
-        logger.error("N2 scan length problems %s", e)
-        N2_scan = preN2_scan
-    if N2_scan.empty:
-        logger.warning("!! N2 background is Empty!! {0}".format(N2_FileName))
-    ### === Plot the N2 scans 1st, last,
+def plot_N2_background():
     try:
         fig, ax = plt.subplots()
         first_fastN2_scan.plot(
@@ -645,7 +541,9 @@ def N2_analyze_scan(N2_ovv_file, N2_CVs, N2_actions, N2_FileName, **N2_kwargs):
         plt.close()
     except Exception as e:
         logger.warning("No N2 plot: %s" % e)
+
         # %%
+def prepare_data_for_export():
     seg = N2_scan["Segment #"].unique()[0]
     Sg_info = [
         (i, N2_scan[i].unique())

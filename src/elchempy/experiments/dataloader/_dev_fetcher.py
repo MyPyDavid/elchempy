@@ -4,23 +4,43 @@ Created on Thu Jul 15 16:12:27 2021
 @author: DW
 """
 from pathlib import Path
-from reader import DataReader
-from fetcher import ElchemData
 
-def _dev():
+from .reader import DataReader
+from .fetcher import ElchemData
+
+def get_files(name= ''):
     from pathlib import Path
-    _n2files = Path.cwd().parent.parent.parent.parent.joinpath('data/raw').rglob('*par')
+    _search = '*par'
+    if name:
+        _search = f'**/**/*{name}*par'
+
+    rel_data_folder = 'data/raw'
+
+    CWD = Path.cwd()
+    _src_idx = [n for n,i in enumerate(CWD.parts) if i == 'src'][0]
+
+    repodir = Path('/'.join(CWD.parts[0:_src_idx]))
+    datadir= repodir.joinpath(rel_data_folder)
+    print(datadir)
+
+    _n2files = datadir.rglob(_search)
     return _n2files
 
-def _dev_test_read():
-    files = _dev()
+def _dev_test_read(filesgen):
+    # files = _dev()
     results = []
     # for filepath in files:
     while True:
-        filepath = next(files)
+        try:
+            filepath = next(filesgen)
 
-        results.append(ElchemData(filepath))
+            results.append(ElchemData(filepath))
+        except StopIteration:
+            print(f"data fetch finished len {len(results)}")
+            break
+    return results
 
+def _false():
     if False:
         DR = DataReader(filepath)
         actions = DR.actions

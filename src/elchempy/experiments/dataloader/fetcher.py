@@ -5,9 +5,9 @@ Fetches data from a file and constructs the electrochemical data columns
 import pandas as pd
 import numpy as np
 
-from reader import DataReader
+from .reader import DataReader
 
-from converters import get_current_density, get_potential_vs_RE, get_RPM_from_DAC_V
+from .converters import get_current_density, get_potential_vs_RE, get_RPM_from_DAC_V
 
 class ElchemData:
     '''
