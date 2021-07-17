@@ -28,14 +28,14 @@ if __name__ == "__main__":
         Ws,
         circuit_elements,
     )
-#    from ECpy.experiments.EIS.repos.imppy.impedance.circ import validation as imppy_validation
+#    from elchempy.experiments.EIS.repos.imppy.impedance.circ import validation as imppy_validation
 elif (
     Path(__file__).parent.name == "EIS"
     and __name__.split(".")[-1].split("_")[-1] == "model"
 ):
     from repos.imppy.impedance.models.circuits import CustomCircuit, buildCircuit
-elif __name__.startswith("ECpy"):
-    from ECpy.experiments.EIS.repos.imppy.impedance.models.circuits import (
+elif __name__.startswith("elchempy"):
+    from elchempy.experiments.EIS.repos.imppy.impedance.models.circuits import (
         CustomCircuit,
         buildCircuit,
     )
@@ -123,7 +123,7 @@ def test_parsers():
     # dash_in = [i[0] for i in dash if i[0] not in dash_out]
     # t_series = ''.join([t if n not in dash_out else ' + ' for n,t in enumerate(t)])
     # p_split= t_series.split(' + ')
-    # _nws = ''
+    _nws = ''
     # len(p_split)
     p_split = _check_series(t)
     for i in _check_series(t):
@@ -252,6 +252,7 @@ def buildCircuit(circuit, frequency_str="ang", eval_string="", index=0):
 
     return eval_string, index
 
+ints = map(str, [0,1,2,3,4,5,5,6,7,8,9])
 
 def extract_circuit_elements(circuit):
     p_string = [x for x in circuit if x not in "p(),-"]

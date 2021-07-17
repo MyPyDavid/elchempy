@@ -861,7 +861,7 @@ MigrationBackup/
 
 # End of https://www.toptal.com/developers/gitignore/api/vim,venv,pydev,linux,macos,flask,dotenv,django,direnv,python,windows,virtualenv,pycharm+all,visualstudio,jupyternotebooks,visualstudiocode
 
-### ECpy ###
+### elchempy ###
 
 # Ignore the contents of the `data` folder, except for the `README.md` file
 data/*

@@ -68,9 +68,9 @@ from file_py_helper.PostChar import (
 
 if __name__ == "__main__":
     print(f"Package: {__package__}, File: {__file__}")
-    from ECpy.main_run_PAR_DW import ECRunOVV
-    from ECpy.indexer.prepare_input import CleanUpCrew
-    from ECpy.experiments.EIS.models import Model_Collection
+    from elchempy.main_run_PAR_DW import ECRunOVV
+    from elchempy.indexer.prepare_input import CleanUpCrew
+    from elchempy.experiments.EIS.models import Model_Collection
     import post_helper
     import merger
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     #    from FindExpFolder import *
     #    from .experiments import EIS
     #    from .runEC import run_PAR_DW
-    from ECpy.runEC.EC_logging_config import start_logging
+    from elchempy.runEC.EC_logging_config import start_logging
 
     # logger = start_logging(__name__)
 
@@ -92,11 +92,11 @@ else:
     #    FH_path = Path(__file__).parent.parent.parent
     #    sys.path.append(str(FH_path))
     #    import FileHelper
-    from ECpy.main_run_PAR_DW import ECRunOVV
-    from ECpy.indexer.prepare_input import CleanUpCrew
-    from ECpy.runEC.EC_logging_config import start_logging
-    from ECpy.PostEC import post_helper, merger
-    from ECpy.experiments.EIS.models import Model_Collection
+    from elchempy.main_run_PAR_DW import ECRunOVV
+    from elchempy.indexer.prepare_input import CleanUpCrew
+    from elchempy.runEC.EC_logging_config import start_logging
+    from elchempy.PostEC import post_helper, merger
+    from elchempy.experiments.EIS.models import Model_Collection
 
     # logger = start_logging(__name__)
 _logger = logging.getLogger(__name__)

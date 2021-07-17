@@ -1,6 +1,6 @@
 # User guide
 
-This is the user guide for the `ECpy` project.
+This is the user guide for the `elchempy` project.
 
 ```{toctree}
 :maxdepth: 2

@@ -28,9 +28,9 @@ from file_py_helper.file_functions import FileOperations
 
 if __name__ == "__main__":
 
-    from ECpy.experiments.Loader.CreateCV import create_CVs
+    from elchempy.experiments.Loader.CreateCV import create_CVs
 
-    # from ECpy.experiments.EC_conditions.electrode import WE_SA_collection_eff
+    # from elchempy.experiments.EC_conditions.electrode import WE_SA_collection_eff
     from O2_chrono import O2_Chrono
     from plotting import ORR_plot_ring_disk
     from KL_calc import KL_plots

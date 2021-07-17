@@ -1,10 +1,11 @@
-# `ECpy` structure
+# `elchempy` structure
 
 This page provides information on the repository's structure. The repository's folder
 structure is explained here:
 
 ```{toctree}
 :maxdepth: 2
+./experiments
 ./data.md
 ./docs.md
 ./notebooks.md

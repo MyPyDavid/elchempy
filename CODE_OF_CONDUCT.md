@@ -1,4 +1,4 @@
-# Code of conduct for `ECpy`
+# Code of conduct for `elchempy`
 
 Contributors to this repository hosted by `Your GitHub/GitLab organisation name, e.g. ukgovdatascience` are expected to follow the
 Contributor Covenant Code of Conduct, and those working within Her Majesty's Government
@@ -16,7 +16,7 @@ contributions.
 
 Where this Code of Conduct says:
 
-- "Project", we mean this `ECpy` GitHub repository;
+- "Project", we mean this `elchempy` GitHub repository;
 - "Maintainer", we mean the `Your GitHub/GitLab organisation name, e.g. ukgovdatascience` organisation owners; and
 - "Leadership", we mean both `Your GitHub/GitLab organisation name, e.g. ukgovdatascience` organisation owners, line managers, and other
   leadership within WDZ.

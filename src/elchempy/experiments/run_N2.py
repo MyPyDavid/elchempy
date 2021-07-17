@@ -17,8 +17,10 @@ from file_py_helper.find_folders import FindExpFolder
 # from file_py_helper.file_functions import FileOperations
 
 from .dataloader.fetcher import ElchemData
+
 # TODO find and replace create_CVs with
-from .N2.analyze_scans import N2_analyze_scan, N2_scans
+from .N2.cdl_calculations import CDL
+
 # from .run_Baserunner import base_Analyzer
 
 if __name__ == "__main__":
@@ -140,7 +142,7 @@ def load_all_N2_CVs(N2act_ovv):
 #    EIS_ovv_destfiles = pd.DataFrame(dest_files).set_index('index')
 
 
-class Analyze():  # TODO develop this class further
+class Analyze:  # TODO develop this class further
     """
     Main class for N2 experiment analysis
     """

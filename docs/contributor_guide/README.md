@@ -1,6 +1,6 @@
 # Contributing guide
 
-This is the contributor guide for the `ECpy` project.
+This is the contributor guide for the `elchempy` project.
 
 ```{toctree}
 :maxdepth: 2

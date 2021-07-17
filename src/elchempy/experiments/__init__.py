@@ -1,4 +1,4 @@
-# ECpy/experiments
+# elchempy/experiments
 # import experiments.ORR as ORR
 
 # import .run_EIS
