@@ -1,4 +1,4 @@
-# `ECpy`
+# `elchempy`
 
 This repository contains packages for the processing of electrochemical (EC) experiments in Python.
 I have used these packages for my scientific projects. However, this repository is an attempt to refactor and develop
@@ -9,7 +9,7 @@ these packages into a clear application architecture.
 
 ### Getting started
 
-To start contributing to `ECpy`, run the following commands in
+To start contributing to `elchempy`, run the following commands in
 your shell:
 
 ``` shell script
@@ -48,7 +48,7 @@ Crown copyright and available under the terms of the Open Government 3.0 licence
 
 ## Contributing
 
-If you want to help us build, and improve `ECpy`, view our
+If you want to help us build, and improve `elchempy`, view our
 [contributing guidelines][contributing].
 
 ## Acknowledgements
