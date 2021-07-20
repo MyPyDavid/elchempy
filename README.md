@@ -1,10 +1,10 @@
-# `elchempy`
+## `elchempy`
 
 This repository contains packages for the processing of electrochemical (EC) experiments in Python.
 I have used these packages for my scientific projects. However, this repository is an attempt to refactor and develop
 these packages into a clear application architecture.
 
-> ️ :rotating_light:  :construction: :building_construction: This repo is still under construction :construction_worker_man:...
+ :rotating_light:  :construction: :building_construction: This repo is still under construction :construction_worker_man:...
 
 
 ### Getting started
