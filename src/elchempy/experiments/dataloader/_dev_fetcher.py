@@ -16,24 +16,29 @@ def get_files(name= ''):
 
     rel_data_folder = 'data/raw'
 
-    CWD = Path.cwd()
-    _src_idx = [n for n,i in enumerate(CWD.parts) if i == 'src'][0]
+    CWD = Path(__file__)
+    # print(f'CURRENT WD: {CWD}')1
+    if 'src' in CWD.parts:
+        _src_idx = [n for n,i in enumerate(CWD.parts) if i == 'src'][0]
 
     repodir = Path('/'.join(CWD.parts[0:_src_idx]))
     datadir= repodir.joinpath(rel_data_folder)
-    print(datadir)
+    # print(datadir)
+    _files = list(datadir.rglob(_search))
+    if not _files:
+        print("Warning, no files with name {name} found in:\n{datadir}")
+    return _files
 
-    _n2files = datadir.rglob(_search)
-    return _n2files
-
-def _dev_test_read(filesgen):
+def _dev_test_read(files):
     # files = _dev()
     results = []
     # for filepath in files:
-    while True:
+    for file in files:
+        results.append(ElchemData(file))
+
+    while False:
         try:
             filepath = next(filesgen)
-
             results.append(ElchemData(filepath))
         except StopIteration:
             print(f"data fetch finished len {len(results)}")

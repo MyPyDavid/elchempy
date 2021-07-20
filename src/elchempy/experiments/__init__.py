@@ -4,7 +4,7 @@
 # import .run_EIS
 # import .run_HER
 # import .run_HPRR
-from . import run_N2
+#from . import run_N2
 # import .run_OER
 # import .run_ORR
 # import .run_experiment

@@ -4,14 +4,36 @@ All functions for this project, should be stored in this folder. **All tests sho
 stored in the `tests` folder**, which is one-level above this folder in the main
 project directory.
 
+## Overview
 The sub-folders should be used as follows:
+- `experiments`: Data processing and analysis for each type of experiment in the sub-folders.
+  - `dataloader` : Functions for loading the data from experimental files.
+  - `N2` : Measurements in nitrogen (N2) saturated electrolyte.
 
-- `make_data`: Data processing-related functions;
-- `make_features`: Feature-related functions, for example, functions to create features
+- `indexer`: Makes an overview of the experimental data files.
+
+### Api
+``` python
+# A first test run can me be made.
+# Files should be placed in the data/raw folder at the repo top,
+# so this package should be cloned and installed in editable mode
+# for this to work.
+
+import elchempy
+N2_scans = elchempy.N2_test()
+
+```
+
+
+#### Cookiecutter readme template
+- `template_folders` : from the coockiecutter template
+  - `make_data`: Data processing-related functions;
+  - `make_features`: Feature-related functions, for example,      functions to create features
   from processed data;
-- `make_models`: Model-related functions;
-- `make_visualisations`: Functions to produce visualisations; and
-- `utils`: Utility functions that are helpful in the project.
+  - `make_models`: Model-related functions;
+  - `make_visualisations`: Functions to produce visualisations; 
+  - `utils`: Utility functions that are helpful in the project.
+
 
 Feel free to create/rename/delete these folders as required, as they will not be
 necessary for each and every project.

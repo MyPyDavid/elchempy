@@ -5,6 +5,11 @@ Created on Sat Jul 17 13:21:42 2021
 """
 
 
+def get_N2_background_data():
+    return None
+
+
+
 def GET_BACKGROUND_N2_FOR_ORR(N2_CVs):
     #            N2_scan = grA.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','0.1'))
     ### === Prepare the background N2 scan (10 mV/s) for ORR with exactly 2000 rows === ###

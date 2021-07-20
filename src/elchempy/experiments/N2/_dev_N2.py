@@ -3,6 +3,10 @@ Created on Fri Jul 16 10:20:30 2021
 
 @author: DW
 """
+
+import numpy as np
+import pandas as pd
+
 import elchempy
 
 from elchempy.experiments.dataloader._dev_fetcher import get_files, _dev_test_read
@@ -17,10 +21,11 @@ from elchempy.experiments.dataloader._dev_fetcher import get_files, _dev_test_re
         #                grA.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','0.1'))
         #        grB.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','N2_act')).to_csv(N2_dest_dir.joinpath('%s.csv' %N2_fn))
 def _test_data():
+    pass
+
+
+def _test_N2_runner():
     datacollection = _dev_test_read(get_files('N2'))
-
-def runner(datacollection):
-
     for ecdata in datacollection:
         N2CV = N2_selection(ecdata)
 

@@ -13,3 +13,4 @@ Created on Tue Jul 13 09:01:47 2021
 # import runEC
 
 
+from .experiments.N2.analyses import _test_runner as N2_test

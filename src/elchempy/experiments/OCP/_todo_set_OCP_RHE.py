@@ -210,7 +210,10 @@ def get_RHE_OCP(ovv):
             logger.warning("Overall dir errror OVV = EMPTY in exp dir: \n %s" % (e))
         #        ovv['RHE_fn'] = 0
         RHE_mean = [0]
+
+def OCP_RHE_measurement()
     if not RHE_OCPs.empty:
+
         try:
             RHE_elec = []
             for RHE_OCP in RHE_OCPs:

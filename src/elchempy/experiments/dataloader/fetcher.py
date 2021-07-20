@@ -2,6 +2,11 @@
 Fetches data from a file and constructs the electrochemical data columns
 """
 
+from collections import namedtuple
+from dataclasses import dataclass
+
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 
@@ -9,6 +14,8 @@ from .reader import DataReader
 
 from .converters import get_current_density, get_potential_vs_RE, get_RPM_from_DAC_V
 
+#%%
+@dataclass
 class ElchemData:
     '''
     This class contains all functions
@@ -19,20 +26,44 @@ class ElchemData:
 
     '''
 
-    def __init__(self, filepath):
+    filepath: [Path, str]
 
-        self.filepath = filepath
+    ActionId_to_Type_Reference = {
+            "Cyclic Voltammetry (Multiple Cycles)": 38,
+            "Chronoamperometry": 3,
+            "Unknown": 0,
+            "Potentiostatic EIS": 21,
+            "Cyclic Voltammetry": 14,
+        }
 
-        self.DR = DataReader(filepath)
+
+    def __post_init__(self):
+
+        # self.filepath = filepath
+        self.DR = DataReader(self.filepath)
         self.raw_actions = self.DR.actions
         self.raw_data = self.DR.data
         self.data = self.raw_data.copy(deep=True)
         self.actions = self.raw_actions.copy(deep=True)
 
-        self.data = self.assign_E_vs_RE(self.data)
-        self.data = self.assign_electrochemical_data_columns(self.data)
-        self.data = self.assign_action_type_from_reference_table(self.data )
-        self.data = self.assign_action_number_to_data_from_actions_table(self.data , self.actions)
+        if not self.data.empty:
+            try:
+                self.data = self.assign_E_vs_RE(self.data)
+                self.data = self.assign_electrochemical_data_columns(self.data)
+                self.data = self.assign_action_type_from_reference_table(self.data )
+                self.data = self.assign_action_number_to_data_from_actions_table(self.data , self.actions)
+            except Exception as e:
+                print(f"{self.__class__.__qualname__} error {e} for\n {self.filepath}")
+
+        self.methods = []
+
+
+    def add_method(self, results_from_method):
+        methodname = results_from_method.__class__.__qualname__
+        # if not hasattr(self, methodname):
+        setattr(self, methodname, results_from_method)
+        self.methods.append(methodname)
+        # else:
 
 
     @staticmethod
@@ -175,8 +206,8 @@ class ElchemData:
         data.SweepType = data.SweepType.fillna(method="backfill")
         return data
 
-    @staticmethod
-    def assign_action_type_from_reference_table(data : pd.DataFrame):
+    # @staticmethod
+    def assign_action_type_from_reference_table(self, data : pd.DataFrame, type_action_key = 'action_type'):
         '''
         Goal:
             assign a type of action to each segment number
@@ -207,17 +238,9 @@ class ElchemData:
         data : pd.DataFrame
             contains the data table + new "action_type" column
         '''
-        ActionId_to_Type_Reference = {
-            "Cyclic Voltammetry (Multiple Cycles)": 38,
-            "Chronoamperometry": 3,
-            "Unknown": 0,
-            "Potentiostatic EIS": 21,
-            "Cyclic Voltammetry": 14,
-        }
-        type_action_key = 'action_type'
 
         # SRunq = segment1["ScanRate_calc"].round(3).unique()
-        data[type_action_key] = data['ActionId'].map({val : key for key,val in ActionId_to_Type_Reference.items()})
+        data[type_action_key] = data['ActionId'].map({val : key for key,val in self.ActionId_to_Type_Reference.items()})
         return data
 
     @staticmethod
@@ -261,7 +284,7 @@ class ElchemData:
         return data
 
     def __repr__(self):
-        _name = self.filepath.name
-        _txt = f'actions = {len(self.actions)}, data = {len(self.data)}'
+        _name = Path(self.filepath).name
+        _txt = f'actions={len(self.actions)}, data={len(self.data)}, methods={", ".join(map(str, self.methods))}'
         return f'{self.__class__.__qualname__}: {_name}, {_txt}'
 
