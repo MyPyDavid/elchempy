@@ -125,7 +125,7 @@ def EC_loadOVV(ForceRecalculation="no", exp_folder_search_set=None):
     )
     return ExpParOVV
 
-
+#  logging.basicConfig(filename=log_fn, filemode='w', level=level_log,format='%(asctime)s %(levelname)s, %(lineno)d: %(message)s')
 class MainEC:
     """This is the main class for running the EC analysis script in a big loop over the experimental PAR files.
     First it indexes the files and creates an Overview in a DataFrame, or takes an existing index (OVV, EC_index).
@@ -136,8 +136,7 @@ class MainEC:
     def __init__(self):
         pass
 
-    #        log_fn = FileHelper.FindExpFolder('VERSASTAT').DestDir.joinpath('EC_logger.log')
-    #        logging.basicConfig(filename=log_fn, filemode='w', level=level_log,format='%(asctime)s %(levelname)s, %(lineno)d: %(message)s')
+
     def MainPrepareList(ForceRecalc="no"):
         """Loads the Overview (OVV) depending on if it exist.
         BYPASSED by using EC_LoadOVV directly..."""
@@ -146,16 +145,8 @@ class MainEC:
         #        ExpPAR_DB =  pd.HDFStore(PathDB)
         ExpParOVV = EC_loadOVV(ForceRecalculation=ForceRecalc)
         EC_index = ExpParOVV
-        #        .query('(EXP_date > 20181001)')
         return EC_index
 
-    #        ExpPARs = pd.read_hdf(FindExpFolder('VERSASTAT').DestDir.joinpath('PAR_Files_class.hdf5'))
-    #        ExpParGrp = aa.groupby(by='EXP_dir')
-    #        for exp_dir,gr in EC_index.loc[EC_index.EXP_dir.str.contains('JOS1')].groupby(by='EXP_dir'):
-    #%%
-    #        test1 = EC_index.query('(EXP_date > 20190214) & (EXP_date < 20190301)')
-    #       EC_index.loc[EC_index.EXP_dir.str.contains('25.01.2019_0.1MH2SO4_cell2*') == True]
-    #        for exp_dir,gr in EC_index.groupby(by='EXP_dir'):
     def EC_Analysis_Input(TakeRecentList=True, exp_folder=None, force_recalc="index"):
         """Loads the acutal Overview (OVV) depending on if it exists or not and if it need to be rec.
         BYPASSED by using EC_LoadOVV directly ..."""
@@ -212,20 +203,7 @@ class MainEC:
         EC_index["Loading_cm2"] = EC_index["Loading_cm2"].round(3)
 
         EC_index = add_detect_duplicate_measurements(EC_index)
-        #            EC_index = MainEC.MainPrepareList()
-        #        hashSource = pd.util.hash_pandas_object(OvvFromFile,index=False).sum()
-        #        test1 = EC_index
-        #        test2 = EC_index.query('(EXP_date == 20190326) | (EXP_date == 20190212)')
-        #        test3 = EC_index.query('(EXP_date == 20190301) & (EXP_date < 20190401)')
-        #        test3 = EC_index.query('(EXP_date >= 20190301)  & ((SampleID >= "DW01") | (SampleID == "JOS12") | (SampleID == "JOS13") | (SampleID == "JOS14") | (SampleID == "JOS15")) & (PAR_exp == "EIS")')
-        #        test3.SampleID.values
-        #        filepath_cols = ['Dest_dir','EXP_dir','PAR_file']
-        #        for i in filepath_cols:
-        #            if  Path(EC_index[i].iloc[0]).is_file() == False:
-        #                CS_parts_PDD = FileHelper.FileOperations.find_CS_parts(FileHelper.FindExpFolder('BET').DataDir)
-        #                chLstr = [CS_parts_PDD[0].joinpath(FileHelper.FileOperations.find_CS_parts(str(i))[1]) for i in  EC_index[i].values]
-        #                EC_index[i] = chLstr
-        #                logger.info('Index file paths readjusted for local drive:{0}'.format(i))
+
         EC_index = EC_index.query('SampleID != "TEMPLATE"')
         EC_index.PAR_file = [Path(i) for i in EC_index.PAR_file.to_numpy()]
         EC_index = FileOperations.ChangeRoot_DF(
@@ -262,13 +240,6 @@ def add_detect_duplicate_measurements(EC_index):
     else:
         return EC_index
 
-    #        (EXP_date > 20180101)
-    #        test2 = EC_index.loc[EC_index.EXP_dir.str.contains('26.10.2018_PTA200_bipot_0.1MH2SO4_RRDE22775')]
-    #        EC_index.query('(EXP_date == 26.10.2018_PTA200_bipot_0.1MH2SO4_RRDE22775)')
-    #                print('Fail: %s\n because %s' %(exp_dir,e))
-    #            num_dir = exp_dir.Index
-    #%%
-    #        return print('Main EC loop Success!')
 
     def MergeIndexOvv(results, ovv):
         IndexDir = FindExpFolder("VERSASTAT").IndexDir
@@ -360,28 +331,3 @@ def CleanUpCrew(
     else:
         print("Nothing deleted, log empty")
 
-
-#    FolderOps.FindExpFolder('VERSASTAT').IndexDir.mkdir(parents=True,exist_ok=True)
-#    self.index = EC_index
-#    EC_index = ECRunOVV(load=1).index.sort_values('PAR_date',ascending=False)
-#    #    run = input('Want to start the fitting run?')
-#    run = 'ytest ORR N2_act'
-# run = 'ytest short EIS'
-#    if 'y' in run:
-#        PAR_init_text()
-#        EC_index = MainEC.EC_Analysis_Input(True)
-#        PostDestDir = FolderOps.FindExpFolder('VERSASTAT').DestDir.joinpath('PostEC')
-#%%
-#            RHE_OCP_data = RHE_index[1], RHE_index[2]
-# Forget about HDF files for now 21.01.19 ====
-#            try:
-#                RHE_ovv.to_hdf(PathDB,str(dest_dir.joinpath('RHE_OVV').as_posix()),table=True,mode='w')
-#            except Exception == 'HDF5ExtError':
-#                os.remove(PathDB)
-#                RHE_ovv.to_hdf(PathDB,str(dest_dir.joinpath('RHE_OVV').as_posix()),table=True,mode='w')
-#             === ====#  , 'dest_dir' : dest_dir})
-#        Experiments, Gases  = ovv.PAR_exp.unique(), ovv.Gas.unique()
-#        dest_dir.mkdir(parents=True,exist_ok=True)
-#        outPF_ovv = dest_dir.joinpath('OVV_'+dest_dir.name+'.xlsx')
-#        FileHelper.FileOperations.CompareHashDFexport(ovv,outPF_ovv)
-#                ovv.to_excel(outPF_ovv)

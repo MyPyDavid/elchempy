@@ -1015,7 +1015,7 @@ if __name__ == "__main__":
 
     # run = []
     _start = "n"
-    #    run = input('What to run for ECpy?')
+    #    run = input('What to run for elchempy?')
 
     run_kwargs = dict(
         skip=False,

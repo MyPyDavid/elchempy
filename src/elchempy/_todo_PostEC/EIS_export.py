@@ -33,10 +33,10 @@ from file_py_helper.PostChar import (
 if __name__ == "__main__":
     print(f"Package: {__package__}, File: {__file__}")
 
-    from ECpy.experiments.ORR import ORR_analyze_scans
-    from ECpy.PostEC.plotting import eisplot
-    from ECpy.PostEC.collect_load import Load_from_Indexes
-    from ECpy.experiments.EIS.models import Model_Collection  # EEC_models_index
+    from elchempy.experiments.ORR import ORR_analyze_scans
+    from elchempy.PostEC.plotting import eisplot
+    from elchempy.PostEC.collect_load import Load_from_Indexes
+    from elchempy.experiments.EIS.models import Model_Collection  # EEC_models_index
 
     #    logger = start_logger(Path.cwd())
     #    import plotting
@@ -46,13 +46,13 @@ else:
     print("\n\n***** run_PAR_DW *****")
     print(__file__)
 
-    from ECpy.PostEC.plotting import eisplot
+    from elchempy.PostEC.plotting import eisplot
 
-    #    from ECpy.experiments.EIS import plotting
-    from ECpy.PostEC import post_helper
-    from ECpy.PostEC.collect_load import Load_from_Indexes
-    from ECpy.experiments.ORR import ORR_analyze_scans
-    from ECpy.experiments.EIS.models import EEC_models_index
+    #    from elchempy.experiments.EIS import plotting
+    from elchempy.PostEC import post_helper
+    from elchempy.PostEC.collect_load import Load_from_Indexes
+    from elchempy.experiments.ORR import ORR_analyze_scans
+    from elchempy.experiments.EIS.models import EEC_models_index
 
 
 OriginColor = FindExpFolder().LoadOriginColor()

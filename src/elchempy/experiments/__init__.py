@@ -1,16 +1,16 @@
-# ECpy/experiments
+# elchempy/experiments
 # import experiments.ORR as ORR
 
-import run_EIS
-import run_HER
-import run_HPRR
-import run_N2
-import run_OER
-import run_ORR
-import run_experiment
+# import .run_EIS
+# import .run_HER
+# import .run_HPRR
+#from . import run_N2
+# import .run_OER
+# import .run_ORR
+# import .run_experiment
 
-import EC_DataLoader
-import EC_conditions
+from . import dataloader
+from . import EC_conditions
 
 
 # from .EC_conditions import *

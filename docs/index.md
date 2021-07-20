@@ -1,6 +1,6 @@
-# `ECpy` documentation
+# `elchempy` documentation
 
-Here is the documentation for the `ECpy` project.
+Here is the documentation for the `elchempy` project.
 
 ```{toctree}
 :maxdepth: 2

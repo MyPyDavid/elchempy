@@ -4,23 +4,48 @@ Created on Thu Jul 15 16:12:27 2021
 @author: DW
 """
 from pathlib import Path
-from reader import DataReader
-from fetcher import ElchemData
 
-def _dev():
+from .reader import DataReader
+from .fetcher import ElchemData
+
+def get_files(name= ''):
     from pathlib import Path
-    _n2files = Path.cwd().parent.parent.parent.parent.joinpath('data/raw').rglob('*par')
-    return _n2files
+    _search = '*par'
+    if name:
+        _search = f'**/**/*{name}*par'
 
-def _dev_test_read():
-    files = _dev()
+    rel_data_folder = 'data/raw'
+
+    CWD = Path(__file__)
+    # print(f'CURRENT WD: {CWD}')1
+    if 'src' in CWD.parts:
+        _src_idx = [n for n,i in enumerate(CWD.parts) if i == 'src'][0]
+
+    repodir = Path('/'.join(CWD.parts[0:_src_idx]))
+    datadir= repodir.joinpath(rel_data_folder)
+    # print(datadir)
+    _files = list(datadir.rglob(_search))
+    if not _files:
+        print("Warning, no files with name {name} found in:\n{datadir}")
+    return _files
+
+def _dev_test_read(files):
+    # files = _dev()
     results = []
     # for filepath in files:
-    while True:
-        filepath = next(files)
+    for file in files:
+        results.append(ElchemData(file))
 
-        results.append(ElchemData(filepath))
+    while False:
+        try:
+            filepath = next(filesgen)
+            results.append(ElchemData(filepath))
+        except StopIteration:
+            print(f"data fetch finished len {len(results)}")
+            break
+    return results
 
+def _false():
     if False:
         DR = DataReader(filepath)
         actions = DR.actions

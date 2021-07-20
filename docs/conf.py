@@ -1,4 +1,4 @@
-# ECpy documentation build configuration file
+# elchempy documentation build configuration file
 #
 # This file is execfile()d with the current directory set to its containing dir.
 #
@@ -50,7 +50,7 @@ source_suffix = {
 master_doc = "index"
 
 # General information about the project.
-project = "ECpy"
+project = "elchempy"
 author = "Your GitHub/GitLab organisation name, e.g. ukgovdatascience"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -198,7 +198,7 @@ html_static_path = ["_static"]
 # html_search_scorer = "scorer.js"
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "ECpydoc"
+htmlhelp_basename = "elchempydoc"
 
 # -- Options for LaTeX output ----------------------------------------------------------
 
@@ -222,8 +222,8 @@ latex_elements = {
 latex_documents = [
     (
         "index",
-        "ECpy.tex",
-        u"ECpy Documentation",
+        "elchempy.tex",
+        u"elchempy Documentation",
         u"Your GitHub/GitLab organisation name, e.g. ukgovdatascience",
         "manual",
     ),
@@ -257,8 +257,8 @@ latex_documents = [
 man_pages = [
     (
         "index",
-        "ECpy",
-        u"ECpy Documentation",
+        "elchempy",
+        u"elchempy Documentation",
         [u"Your GitHub/GitLab organisation name, e.g. ukgovdatascience"],
         1,
     )
@@ -275,10 +275,10 @@ man_pages = [
 texinfo_documents = [
     (
         "index",
-        "ECpy",
-        u"ECpy Documentation",
+        "elchempy",
+        u"elchempy Documentation",
         u"Your GitHub/GitLab organisation name, e.g. ukgovdatascience",
-        "ECpy",
+        "elchempy",
         "Packages for the processing of Electr",
         "Miscellaneous",
     ),

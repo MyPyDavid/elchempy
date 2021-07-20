@@ -24,9 +24,12 @@ def RHE_potential_assignment(ovv_row):
 
     Parameters
     ----------
-    ovv_row : pd.DataFramw row
+    ovv_row : pd.DataFramw row, namedtuple
         this is a row of the overall index dataframe which contains the
         information to determine the potential in mV
+
+        keys:
+            RHE_fn, RHE_mean, PAR_date, PAR_file
 
     Returns
     -------
@@ -34,6 +37,8 @@ def RHE_potential_assignment(ovv_row):
         RHE value /1000 for unit V
 
     """
+
+
     CVrow = ovv_row
     RHE_potential = 0
     if np.abs(CVrow.RHE_fn) > 3:

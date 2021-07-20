@@ -8,7 +8,7 @@ import pandas as pd
 import logging
 logger = logging.getLogger(__name__)
 
-from parsers import read_PAR_file
+from .parsers import read_PAR_file
 
 def _drop_cols_from_data_segment():
     ''' Columns keys to possibly drop from data DataFrame'''
