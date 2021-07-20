@@ -15,7 +15,13 @@ your shell:
 ``` shell script
 make requirements
 ```
+A first test run can be made. Files (*.par) should be placed in the data/raw folder at the repo top.
+For this to work, the package should be cloned and installed in editable mode.
 
+``` python
+import elchempy
+N2_scans = elchempy.N2_test()
+```
 ### Requirements
 
 - Python 3.6.1+ installed
