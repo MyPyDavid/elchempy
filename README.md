@@ -2,9 +2,20 @@
 
 This repository contains packages for the processing of electrochemical (EC) experiments in Python.
 I have used these packages for my scientific projects. However, this repository is an attempt to refactor and develop
-these packages into a clear application architecture.
+these packages into a clear application architecture. Therefore...
 
  :rotating_light:  :construction: :building_construction: This repo is still under construction :construction_worker_man:...
+
+However...
+A first test run can be made. Files (*.par) should be placed in the data/raw folder at the repo top.
+For this to work, the package should be cloned and installed in editable mode.
+
+
+``` python
+import elchempy
+N2_scans = elchempy.N2_test()
+```
+
 
 
 ### Getting started
@@ -15,13 +26,7 @@ your shell:
 ``` shell script
 make requirements
 ```
-A first test run can be made. Files (*.par) should be placed in the data/raw folder at the repo top.
-For this to work, the package should be cloned and installed in editable mode.
 
-``` python
-import elchempy
-N2_scans = elchempy.N2_test()
-```
 ### Requirements
 
 - Python 3.6.1+ installed
