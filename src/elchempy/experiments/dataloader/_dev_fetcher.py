@@ -6,7 +6,7 @@ Created on Thu Jul 15 16:12:27 2021
 from pathlib import Path
 
 from .reader import DataReader
-from .fetcher import ElchemData
+from .fetcher import ElChemData
 
 def get_files(name= ''):
     from pathlib import Path
@@ -34,12 +34,12 @@ def _dev_test_read(files):
     results = []
     # for filepath in files:
     for file in files:
-        results.append(ElchemData(file))
+        results.append(ElChemData(file))
 
     while False:
         try:
             filepath = next(filesgen)
-            results.append(ElchemData(filepath))
+            results.append(ElChemData(filepath))
         except StopIteration:
             print(f"data fetch finished len {len(results)}")
             break
