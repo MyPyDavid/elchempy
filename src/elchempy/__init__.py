@@ -8,7 +8,19 @@ Created on Sat Jan 25 13:43:14 2020
 import sys
 import warnings
 
+__author__ = "David Wallace"
 __package_name__ = "elchempy"
+__docformat__ = "restructuredtext"
+__status__ = "Development"
+
+
+try:
+    from ._version import version
+
+    __version__ = version
+except:
+    __version__ = "__version__ = '0.0.0'"
+
 
 from pathlib import Path
 import logging
@@ -99,7 +111,8 @@ for dependency in soft_dependencies:
 
 del hard_dependencies, soft_dependencies, dependency, missing_dependencies
 
-from .api import *
+from .api import N2_test
+
 # import experiments
 
 # TODO main list
