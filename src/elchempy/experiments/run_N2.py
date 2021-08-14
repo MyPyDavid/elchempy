@@ -4,8 +4,13 @@ Created on Tue Jul 20 13:18:07 2021
 @author: DW
 """
 
-from .dataloader.fetcher import ElchemData
-from N2.analyses import N2_analysis
+import pandas as pd
+
+
+import elchempy
+
+from elchempy.experiments.dataloader.fetcher import ElchemData
+from elchempy.experiments.N2.analyses import N2_analysis
 
 
 class Analyze:  # TODO implement this class or move to BaseRunner class
@@ -16,12 +21,12 @@ class Analyze:  # TODO implement this class or move to BaseRunner class
     def __init__(
         self,
         index_slice: pd.DataFrame = pd.DataFrame(),
-        multi_par_fit=False,
+        # multi_par_fit=False,
         **N2_kwargs,
     ):
 
         self.index_slice = index_slice
-        self.multi_par_fit
+        # self.multi_par_fit
 
     def get_data_collection(self):
         results = []
@@ -40,6 +45,9 @@ class Analyze:  # TODO implement this class or move to BaseRunner class
         pass
 
     def run_serial(self):
+        pass
+    def multi_par_fit(self):
+        pass
 
     def _runner(datacollection):
 

@@ -4,7 +4,9 @@ this module calculates the Cdl from Cyclic Voltammetries measured in N2 at sever
 
 """
 
+from typing import NamedTuple
 from collections import namedtuple
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -16,33 +18,108 @@ logger = logging.getLogger(__name__)
 
 import elchempy
 
-from elchempy.experiments.dataloader._dev_fetcher import get_files, _dev_test_read
-from elchempy.experiments.dataloader.fetcher import ElchemData
+from elchempy.experiments.dataloader.fetcher import ElChemData
 from elchempy.experiments.N2.background_scan import get_N2_background_data
-
 
 #        grB = N2_CVs.groupby(by=['Gas','Type','EXP'])
 #        for scan in grB.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','N2_act')):
 #            print(scan)
 #                grA.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','0.1'))
 #        grB.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','N2_act')).to_csv(N2_dest_dir.joinpath('%s.csv' %N2_fn))
-def _test_data(exp_type: str):
-    datacollection = _dev_test_read(get_files(exp_type))
-    return datacollection
+
+class _DevClass():
+    from elchempy.experiments.dataloader._dev_fetcher import get_files, _dev_test_read
+
+    def _test_data(exp_type: str):
+        datacollection = _dev_test_read(get_files(exp_type))
+        return datacollection
+
+    def _test_runner():
+
+        _results = []
+        for ecdata in _test_data("N2"):
+            ecdata= N2_analysis(ecdata)
+            _results.append(ecdata)
+        return _results
+
+def new_runner():
+    from elchempy.experiments.dataloader._dev_fetcher import get_files, _dev_test_read
+    _result = []
+    for fl in get_files('N2'):
+        N2res = N2_Data(fl)
+        _result.append(N2res)
+    return _result
+
+# N2_results = namedtuple('N2', 'raw_data pars data N2_BG')
+
+class N2_Results(NamedTuple):
+    raw_data: pd.DataFrame
+    pars: pd.DataFrame
+    data: pd.DataFrame
+    N2_BG: pd.DataFrame
+
+EvRHE = "E_vs_RHE"
+
+if 0:
+    nn=N2_data('//mnt/DATA/APPS_SOFT/VENVS/repos/elchempy/data/raw/06.03.2018_DW28_HPRR_0.1MHClO4_RRDE22960/N2_20cls_300_100_10_DW28_298.par')
+
+class N2_Data(ElChemData):
+
+    def __init__(self, filepath: [Path, str], **kwargs):
+        self.filepath = filepath
+        self.kwargs = kwargs
+        super().__post_init__()
+
+        N2_CVs = self.select_data()
+
+        N2_results = self.analyze(N2_CVs)
+        self.add_analysis_method(N2_results)
+
+    def select_data(self):
+        # FIXME Select only CV types from Data segment
+        # Select the data for N2 Cyclic Voltammograms
+        N2_CVs = self.data.loc[self.data.ActionId == 38]
+        N2_CVs = N2_CVs.dropna(subset=['scanrate']).loc[N2_CVs.scanrate_calc != 0]
+        return N2_CVs
+
+    def analyze(self, N2_CVs):
+        '''
+        Performs the steps in the N2 analysis and add the
+        results to the ElchemData instance.
+
+        Parameters
+        ----------
+        ecdata : ElchemData
+            contains the raw data.
+
+        Returns
+        -------
+        ecdata : ElchemData
+            contains the results in an added method as attribute "N2".
+
+        '''
+
+        # ElChemData
+        Cdl_pars, Cdl_data = pd.DataFrame(), pd.DataFrame()
+        # scanrates = N2_CVs.scanrate.unique()
+        if N2_CVs.scanrate.nunique() > 2:
+            # if multiple scanrates are present than calculations can start
+            Cdl_pars, Cdl_data  = CDL(N2_CVs, EvRHE = EvRHE)
+        # Check if possible background (BG) scan is in the data
+        BG_present = False
+        N2_BG = pd.DataFrame()
+        if N2_CVs.scanrate.min() < 0.015:
+            # check presence of slow scanrates in data
+            BG_present = True
+        if BG_present:
+            N2_BG = get_N2_background_data()
+
+        N2_results = N2_Results(N2_CVs, Cdl_pars, Cdl_data, N2_BG)
+
+        return N2_results
 
 
-def _test_runner():
-
-    _results = []
-    for ecdata in _test_data("N2"):
-        ecdata= N2_analysis(ecdata)
-        _results.append(ecdata)
-    return _results
-
-
-N2_method = namedtuple('N2', 'raw_data pars data N2_BG')
-
-def N2_analysis(ecdata : ElchemData):
+def _old_N2_analysis(ecdata : ElChemData):
     '''
     Performs the steps in the N2 analysis and add the
     results to the ElchemData instance.
@@ -56,8 +133,8 @@ def N2_analysis(ecdata : ElchemData):
     -------
     ecdata : ElchemData
         contains the results in an added method as attribute "N2".
-
     '''
+    # ElChemData
     # FIXME Select only CV types from Data segment
     # Select the data for N2 Cyclic Voltammograms
     N2_CVs = ecdata.data.loc[ecdata.data.ActionId == 38]
@@ -68,7 +145,7 @@ def N2_analysis(ecdata : ElchemData):
     # scanrates = N2_CVs.scanrate.unique()
     if N2_CVs.scanrate.nunique() > 2:
         # if multiple scanrates are present than calculations can start
-        Cdl_pars, Cdl_data  = CDL(N2_CVs)
+        Cdl_pars, Cdl_data  = CDL(N2_CVs, EvRHE = EvRHE)
 
     # Check if possible background (BG) scan is in the data
     BG_present = False
@@ -81,22 +158,19 @@ def N2_analysis(ecdata : ElchemData):
 
     N2_ecdata = N2_method(N2_CVs, Cdl_pars, Cdl_data, N2_BG)
 
-    ecdata.add_method(N2_ecdata)
+    ecdata.add_analysis_method(N2_ecdata)
 
     return ecdata
 
 
-EvRHE = "E_AppV_RHE"
-
-
-def CDL(N2_CVs):
+def CDL(N2_CVs: pd.DataFrame, EvRHE: str):
 
     scanrates = N2_CVs.scanrate.unique()
 
     srgrpby = N2_CVs.groupby("scanrate")
 
     # _V08 = N2_CVs.loc[np.isclose(0.8, N2_CVs[EvRHE], atol=0.01)]
-    grp = N2_CVs.groupby(["Segment #", "SweepType", "E_AppV_RHE"])
+    grp = N2_CVs.groupby(["Segment #", "SweepType", EvRHE])
 
     _N2_scans_lst = []
     for sr in scanrates:
@@ -158,18 +232,14 @@ def get_Cdl_pars_per_E(Cdl_data, E_linspace=np.linspace(0, 1, 21)):
     Cdl_swp_E_selection = pd.concat(Cdl_swp_E_selection_lst)
     return Cdl_swp_E_selection
 
-
 def _plot(Cdl_data):
     for ycol in ["lin_slope", "lin_slope_baseline_corr"]:
         Cdl_data.groupby("SweepType").plot(x=EvRHE, y=ycol, kind="scatter")
 
-
 def make_cdl_pars_data_from_linregress(
-    Cdl_dataprep, xcol="scanrate", ycol="j A/cm2", grpbykeys=[EvRHE, "SweepType"]
+    Cdl_dataprep, xcol="scanrate", ycol="j_A_cm2", grpbykeys=[EvRHE, "SweepType"]
 ):
     '''
-
-
     Parameters
     ----------
     Cdl_dataprep : pd.DataFrame
@@ -177,7 +247,7 @@ def make_cdl_pars_data_from_linregress(
     xcol : str, optional
         DESCRIPTION. The default is "scanrate".
     ycol : str, optional
-        DESCRIPTION. The default is "j A/cm2".
+        DESCRIPTION. The default is "j_A_cm2".
     grpbykeys : list, optional
         List of keys to loop the groupby over. The default is [EvRHE, "SweepType"].
 
@@ -234,7 +304,6 @@ def linregress_residual(x, y):
         contains the linear fit parameters.
     linfit_data : dict
         contains the linear fit data.
-
     '''
     # xcol="scanrate", ycol="j A/cm2"):
     _lindict = {}
@@ -247,9 +316,7 @@ def linregress_residual(x, y):
     linfit_pars = {f"lin_{k}": getattr(_lin, k) for k in _lin._fields}
     linfit_data = {"data_x": x, "data_y": y,"lin_mod_y": _ymod, "lin_rmsd": _rmsd, "lin_zscore_y": Z}
     return linfit_pars, linfit_data
-
     # return gr
-
 
 def check_for_linear_baseline_correction_of_Cdl_values(Cdl_pars):
     ''' takes a linear fit over the Cdl values and substracts it as baseline correction'''
@@ -272,7 +339,7 @@ def check_for_linear_baseline_correction_of_Cdl_values(Cdl_pars):
     return Cdl_data
 
 
-def prepare_Cdl_frame(N2_scans, current_density_key="j A/cm2",
+def prepare_Cdl_frame(N2_scans, current_density_key="j_A_cm2",
                       potential_key=EvRHE,
                       E_linspace=np.linspace(0.1, 1, 50)):
     '''
@@ -286,7 +353,7 @@ def prepare_Cdl_frame(N2_scans, current_density_key="j A/cm2",
     N2_scans : pd.DataFrame
         DESCRIPTION.
     current_density_key : str, optional
-        DESCRIPTION. The default is "j A/cm2".
+        DESCRIPTION. The default is "j_A_cm2".
     potential_key : str, optional
         DESCRIPTION. The default is EvRHE.
 
@@ -339,12 +406,12 @@ def check_if_last_seg_isnormal(N2sr):
             _N2sr_segs = N2sr.loc[
                 N2sr["Segment #"].isin(_lastsegs),
             ]
-            _minmean = _N2sr_segs.groupby("Segment #").agg("jmAcm-2").min().mean()
+            _minmean = _N2sr_segs.groupby("Segment #").agg("j_mA_cm2").min().mean()
 
             _N2sr_test = N2sr.loc[
                 N2sr["Segment #"] == uniq_segs[_idx],
             ]
-            _last_mmn = _N2sr_test["jmAcm-2"].min().mean()
+            _last_mmn = _N2sr_test["j_mA_cm2"].min().mean()
             _dev_perc = 100 * (_minmean - _last_mmn) / _minmean
             #                            print(f'{_dev_perc}')
             if abs(_dev_perc) < 25:
