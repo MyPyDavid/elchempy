@@ -24,7 +24,7 @@ N2_scans = elchempy.N2_test()
 ```
 ### Requirements
 
-- Python 3.6.1+ installed
+- Python 3.7+ installed
 - A `.secrets` file with the [required secrets and
   credentials](#required-secrets-and-credentials)
 - [Load environment variables][docs-loading-environment-variables] from `.envrc`
