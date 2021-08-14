@@ -19,7 +19,7 @@ try:
 
     __version__ = version
 except:
-    __version__ = "__version__ = '0.0.0'"
+    __version__ = "__version__ = '0.0.1'"
 
 
 from pathlib import Path

@@ -27,4 +27,4 @@ testpaths = [
 [tool.setuptools_scm]
 write_to = "src/elchempy/_version.py"
 #local_scheme = 'dirty-tag'
-fallback_version = '0.0.0'
+fallback_version = '0.0.1'
