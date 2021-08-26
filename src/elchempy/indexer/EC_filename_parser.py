@@ -168,7 +168,7 @@ class PAR_file_parser:
         exp_date = ""
         up_dir = -2
         while exp_date == "":
-            #                print(up_dir)
+
             try:
                 exp_date = dt.datetime.strptime(self.exp_dir.split("_")[0], "%d.%m.%Y")
             #                dt.date.fromisoformat(self.exp_dir.split('_')[0],format='%d.%m.%Y',errors='raise')
@@ -190,8 +190,6 @@ class PAR_file_parser:
                             str(e1) + str(e2), exp_dir
                         )
                     )
-            #                        exp_date = pd.to_datetime(PARf.stat().st_ctime,unit='s')
-            #                    faillst2.append((PARf,exp_dir,exp_date))
             if up_dir == -(len(self.PARf.parts) - 1):
                 exp_date = self.parse_result_stat["stat_ctime"]
                 logger.warning(
@@ -199,19 +197,12 @@ class PAR_file_parser:
                         exp_dir
                     )
                 )
-        #                 faillst3.append((PARf,exp_dir,exp_date))
-
         self.parse_result.update(
             {
                 "EXP_date": exp_date,
                 "EXP_date_day_dt": dt.datetime.fromisoformat(str(exp_date)).date(),
             }
         )
-
-    #        try:
-    #            self.date = getting_date_from_PARf(self.PARf,self.exp_dir)
-    #        except:
-    #            self.date = 0
 
     def _get_Gas_from_filename(self):
         try:
