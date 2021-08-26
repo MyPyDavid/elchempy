@@ -1552,7 +1552,6 @@ class N_Levie_ESR_Cdl(BaseModel):
     difficulties involving the analysis of the electrochemical findings obtained for porous electrode materials,
     Energy Storage Materials, https://doi.org/10.1016/j.ensm.2019.12.015.
     [127,254,257]
-
     """
 
     name = "ESR_Levie"

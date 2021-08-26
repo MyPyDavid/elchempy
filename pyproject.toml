@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools", "wheel", "setuptools_scm[toml]>=3.4.1"]
+build-backend = "setuptools.build_meta"
+
 # `coverage` configurations
 [tool.coverage.run]
 source = [
