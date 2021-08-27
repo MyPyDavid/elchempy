@@ -26,9 +26,14 @@ import datefinder
 
 
 def _dev():
+    import pandas as pd
     f = LOCAL_FILES[-1]
-    sid = InterpretFilePath(f)
-    self = sid
+    ecpps = []
+    for f in LOCAL_FILES:
+        sid = ElchemPathParser(f)
+        ecpps.append(sid)
+    aa=pd.concat([pd.DataFrame(i.EC_info) for i in ecpps])
+
 
 
 class ElchemPathParser(Path):
@@ -41,62 +46,63 @@ class ElchemPathParser(Path):
     def __init__(self, *args, **kwargs):
         # super().__init__(*args, **kwargs)
 
-        self.split_info = {}
+        # self.split_info = {}
+        # self.name_split = self.get_most_common_split(self.stem)
+        # self.parent_split = self.get_most_common_split(self.parent.name)
 
-        self.name_split = self.get_most_common_split(self.stem)
-        self.parent_split = self.get_most_common_split(self.parent.name)
+        self.EC_info = {'fullpath' : str(self)}
+        stem_info = tokenize_name_into_remainder(self.stem)
+        # "stem"
+        parent_info = tokenize_name_into_remainder( self.parent.name)
+        # "parent"
+        self.EC_info.update({**{'stem' : stem_info}, **{'parent' :parent_info}})
 
-        self.EC_info = {}
-        stem_info = all_functions("stem", self.stem, self.name_split)
-        parent_info = all_functions("parent", self.parent.name, self.parent_split)
-        self.EC_info = {**stem_info, **parent_info}
+def recognize_element(self, elem):
+    sid = self.try_find_sampleID(elem)
 
-    def recognize_element(self, elem):
-        sid = self.try_find_sampleID(elem)
+def try_find_sampleID(self, file):
+    """Input string or Path and output is SampleID[0] and dict"""
+    pf = Path(file)
+    try:
+        pf_Match = match_SampleID(pf)
+    except:
+        pf_Match = "NoneNoneNone"
+    if pf.is_file():
+        parent_folder = pf.parent.parts[-1]
 
-    def try_find_sampleID(self, file):
-        """Input string or Path and output is SampleID[0] and dict"""
-        pf = Path(file)
         try:
-            pf_Match = match_SampleID(pf)
+            pf_StemMatch = match_SampleID(pf.stem)
         except:
-            pf_Match = "NoneNoneNone"
-        if pf.is_file():
-            parent_folder = pf.parent.parts[-1]
-
-            try:
-                pf_StemMatch = match_SampleID(pf.stem)
-            except:
-                pf_StemMatch = "None"
-            try:
-                pf_ParentMatch = match_SampleID(parent_folder)
-            except:
-                pf_ParentMatch = "None"
-            if pf_StemMatch == pf_ParentMatch:
-                SampleID, match = pf_StemMatch, "yes"
-            else:
-                SampleID, match = pf_StemMatch, "no"
-        elif pf.is_dir():
-            parent_folder = pf.name
-            SampleID, match = pf_Match, "dir"
-            pf_StemMatch, pf_ParentMatch = "None", "None"
+            pf_StemMatch = "None"
+        try:
+            pf_ParentMatch = match_SampleID(parent_folder)
+        except:
+            pf_ParentMatch = "None"
+        if pf_StemMatch == pf_ParentMatch:
+            SampleID, match = pf_StemMatch, "yes"
         else:
-            parent_folder = pf.name
-            SampleID, match = pf_Match, "other"
-            pf_StemMatch, pf_ParentMatch = match_SampleID(pf.stem), "None"
-        #             pf_StemMatch,pf_ParentMatch = 'None', 'None'
-        #        if len(pf_Match) < 10:
-        #            SampleID = pf_Match
-        sID_MatchOut = {
-            "SampleID": SampleID,
-            "sID_Filename": pf_StemMatch,
-            "Tested_Folder": parent_folder,
-            "sID_Folder": pf_ParentMatch,
-            "sID_Match_file_dir": match,
-            "sID_FullPath": pf_Match,
-            "Tested_File": file,
-        }
-        return SampleID, sID_MatchOut
+            SampleID, match = pf_StemMatch, "no"
+    elif pf.is_dir():
+        parent_folder = pf.name
+        SampleID, match = pf_Match, "dir"
+        pf_StemMatch, pf_ParentMatch = "None", "None"
+    else:
+        parent_folder = pf.name
+        SampleID, match = pf_Match, "other"
+        pf_StemMatch, pf_ParentMatch = match_SampleID(pf.stem), "None"
+    #             pf_StemMatch,pf_ParentMatch = 'None', 'None'
+    #        if len(pf_Match) < 10:
+    #            SampleID = pf_Match
+    sID_MatchOut = {
+        "SampleID": SampleID,
+        "sID_Filename": pf_StemMatch,
+        "Tested_Folder": parent_folder,
+        "sID_Folder": pf_ParentMatch,
+        "sID_Match_file_dir": match,
+        "sID_FullPath": pf_Match,
+        "Tested_File": file,
+    }
+    return SampleID, sID_MatchOut
 
 
 skipped_Electrolytes = ["H2SO4", "HClO4", "MeOH", "KOH", "NaOH", "H2O2"]
@@ -129,15 +135,21 @@ def get_most_common_split(name, name_separators=["_", "-"]):
     return split, sepcounter, sep
 
 
-def all_functions(name: str, name_separators=["_", "-"]) -> Dict:
+def tokenize_name_into_remainder(fname: str, name_separators=["_", "-"]) -> Dict:
 
     if not isinstance(fname, str):
         # in case of given path.parent
+        if not isinstance(fname, Path):
+            raise TypeError('name is not string nor Path')
         fname = fname.name
-    EC_info = {}
 
-    split, sepcounter, sep = get_most_common_split(name)
-    popsplit = split.copy()
+    EC_info = {'fname' : fname}
+    sepstr = ''.join(name_separators)
+
+    split, sepcounter, sep = get_most_common_split(fname)
+    # popsplit = split.copy()
+
+    remainder_name = copy.deepcopy(fname)
 
     electrode_patterns = [
         "[Pt]{0,1}[\W][ring]{1}",
@@ -145,34 +157,76 @@ def all_functions(name: str, name_separators=["_", "-"]) -> Dict:
         "AgAgCl{1}[0-9]{0,1}",
         "HgO{1}[0-9]{0,1}",
         "RRDE[0-9]{5}",
+        "RHE"
     ]
 
-    elec_res = search_pattern_and_cutout(name, patterns=electrode_patterns)
-    elec_match_res = [i for i in elec_res if i[-1]]
+    elec_res = search_pattern_and_cutout(remainder_name, patterns=electrode_patterns)
 
-    if not elec_match_res:
-        _n, pattern, name, cut_name, electrode = elec_res[0]
-    elif len(elec_match_res) == 1:
-        _n, pattern, name, cut_name, electrode = elec_match_res[0]
-    else:
-        logger.warning(f"determine electrode from {elec_match_res}")
+    for n, res in enumerate([i for i in elec_res if i[-1]]):
+        remainder_name = replace_and_strip(remainder_name, res[-1], sepstr)
+        EC_info.update(**{f'electrode_{n}' : res[-1]})
 
-    testing_formats = ["%Y-%m-%d", "%d.%m.%Y"]
+    if 0:
+        elec_match_res = 0
+        electrode = None
+        # for elec_match_res
+        if not elec_match_res:
+            _n, pattern, name, remainder_name, electrode = elec_res[0]
+        elif len(elec_match_res) == 1:
+            _n, pattern, name, remainder_name, electrode = elec_match_res[0]
+        else:
 
-    date_matches = list(datefinder.find_dates(cut_name, source=True))
-    if date_matches:
-        cut_name = cut_name.replace(date_matches[0][1], "")
-        cut_name = string_clean_end_character(cut_name)
 
-    gas_exp = determine_Gas_Exp_from_filename(cut_name)
-    pH = determine_pH_from_filename(cut_name)
-    postAST = determine_postAST_from_filename(fname)
+            logger.warning(f"determine electrode from {elec_match_res}")
+        elec_info = {'electrode' : electrode}
+        EC_info.update(**elec_info)
 
-    EC_info.update({name: {**{"fname": fname}, **date, **gas_exp, **pH, **postAST}})
+    # testing_formats = ["%Y-%m-%d", "%d.%m.%Y"]
+    date_matches = list(datefinder.find_dates(remainder_name, source=True))
+    date_info = {'date_dt' : None}
+    if len(date_matches) == 1:
+        remainder_name = replace_and_strip(remainder_name, date_matches[0][1], sepstr)
+        date_info = {'date_dt' : date_matches[0][0], 'date_source' : date_matches[0][1]}
+    elif len(date_matches) > 1:
+        logger.warning(f"datefinder from {remainder_name}, {','.join(map,str(date_matches))}")
+        # string_clean_end_character()
+        EC_info.update(**date_info)
+
+    gas_exp = determine_Gas_Exp_from_filename(remainder_name)
+    if any(gas_exp.values()):
+        for val in gas_exp.values():
+            remainder_name = replace_and_strip(remainder_name, val, sepstr)
+    EC_info.update(**gas_exp)
+
+    pH = determine_pH_from_filename(remainder_name )
+    if pH.get("Electrolyte", None):
+        remainder_name = replace_and_strip(remainder_name, pH.get("Electrolyte", ''), sepstr)
+    EC_info.update(**pH)
+
+    postAST = determine_postAST_from_filename(remainder_name)
+    if any(postAST.values()):
+        for val in postAST.values():
+            remainder_name = replace_and_strip(remainder_name, val, sepstr)
+    EC_info.update(**postAST)
+
+    instr, remainder_name = determine_instrument_from_filename(remainder_name)
+    remainder_name = replace_and_strip(remainder_name, '', sepstr)
+    EC_info.update(**instr)
+
+    sampleID = match_SampleID(remainder_name)
+    remainder_name = replace_and_strip(remainder_name, sampleID, sepstr)
+    EC_info.update(**{'SampleID' : sampleID, 'token_remainder' : remainder_name})
 
     return EC_info
     # determine_date_from_filename(self.parent_split)
+    # EC_info.update({name: {**{"fname": fname}, **date, **gas_exp, **pH, **postAST}})
 
+def replace_and_strip(name, value, stripchars, replace_with=''):
+    if not name:
+        return name
+
+    name = name.replace(value, replace_with)
+    return name.strip(stripchars)
 
 if 0:
     date_patterns = [
@@ -183,12 +237,24 @@ if 0:
     date = determine_date_from_filename(cutsplit)
 
 
+def determine_instrument_from_filename(name):
+    bipot = re.search('bipot|V3F',name)
+    if bipot:
+        source = bipot.group(0)
+        name = name[0:bipot.span()[0]]+name[bipot.span()[1]::]
+    else:
+        source = None
+    # v3f = re.search('V3F',remainder_name)
+    return {'Instrument' : source}, name
+
 # @staticmethod
-def match_SampleID(file, message=False, include_extra=False):
+def match_SampleID(file, message=False, include_extra=False) -> str:
     """finds a possible match in the filename with a known sample id"""
     #        message = True
-    formatID_matches, sampleID = [], []
+    if not file:
+        return None
 
+    formatID_matches, sampleID = [], []
     # if '-' in file.name and not '_' in file.name
     # if not '_' in file and '-' in file:
     # filename = file.name.replace('-','_')
@@ -432,17 +498,18 @@ def determine_pH_from_filename(filename: str) -> Dict:
         elif re.search("Acid", PAR_file_test):
             pH = {"pH": 1, "Electrolyte": "0.1MH2SO4_acid"}
         else:
-            pH = {"pH": None, "Electrolyte": f"Other_{PAR_file_test}"}
-
+            pH = {"pH": None, "Electrolyte": None}
+                  # "Other_{PAR_file_test}"}
     return pH
-
 
 def determine_Gas_Exp_from_filename(filename) -> Dict:
     """returns a dict with Gas and Exp type from the filename"""
     basepf = filename
 
-    if ("OCP" or "RHE") in basepf:
-        gas, tpnm, exp_match = "N2", "RHE", "yes"
+    if "OCP" in basepf:
+        # or "RHE"
+        return {"Gas": "N2", "PAR_exp": "OCP"}
+
     elif "N2" in basepf:
         gas = "N2"
         if "cls" in basepf and not any(
@@ -546,6 +613,8 @@ def determine_postAST_from_filename(filenamesplit) -> Dict:
         postAST = "postORR"
     elif any(s in basepf_split for s in ["postAST"]):
         postAST = "postAST"
+    elif 'POST-EXP' in basepf_split:
+        postAST = 'POST-EXP'
     else:
         postAST = None
     return {"postAST": postAST}
@@ -622,10 +691,10 @@ def search_pattern_and_cutout(stem: str, patterns=[], **kwargs) -> Dict:
     """electrode name"""
     # add V3F, etc...
     # search_and_cut_out(stem, '', flags=re.IGNORECASE)
-    new_stem = copy.deepcopy(stem)
+    # new_stem = copy.deepcopy(stem)
     res = []
     for n, pattern in enumerate(patterns):
-        new_stem, match = search_and_cut_out(new_stem, pattern, **kwargs)
+        new_stem, match = search_and_cut_out(stem, pattern, **kwargs)
         res.append((n, pattern, stem, new_stem, match))
     return res
 
