@@ -8,10 +8,11 @@ import datetime
 from typing import Tuple, List, Dict, Union
 
 import re
+import copy
 
 import logging
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 
 from elchempy.indexer.filepath_parser import FilePathParser
@@ -20,20 +21,25 @@ from elchempy.indexer.extra_EC_info import loading_ref, WE_surface_area_cm2
 ### for Developing
 from elchempy.config import LOCAL_FILES
 
-# class ParserMethods
+### 3rd Party imports
+import datefinder
+
 
 def _dev():
     f = LOCAL_FILES[-1]
     sid = InterpretFilePath(f)
     self = sid
 
-class InterpretFilePath(FilePathParser):
+
+class ElchemPathParser(Path):
     """Find or Guess the SampleID that is assiociated with the filename"""
+
+    _flavour = type(Path())._flavour
 
     name_separators = ["_", "-"]
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        # super().__init__(*args, **kwargs)
 
         self.split_info = {}
 
@@ -41,39 +47,29 @@ class InterpretFilePath(FilePathParser):
         self.parent_split = self.get_most_common_split(self.parent.name)
 
         self.EC_info = {}
-        stem_info  = all_functions('stem', self.stem, self.name_split)
-        parent_info = all_functions('parent',self.parent.name, self.parent_split)
+        stem_info = all_functions("stem", self.stem, self.name_split)
+        parent_info = all_functions("parent", self.parent.name, self.parent_split)
         self.EC_info = {**stem_info, **parent_info}
-
-    def get_most_common_split(self, name):
-        sepcounter = Counter([i for i in name if i in self.name_separators])
-        self.split_info.update(**{ name: { 'counter' : sepcounter}})
-        if sepcounter:
-            sep, _nsep = sepcounter.most_common()[0]
-            return name.split(sep)
-        else:
-            return []
 
     def recognize_element(self, elem):
         sid = self.try_find_sampleID(elem)
-
 
     def try_find_sampleID(self, file):
         """Input string or Path and output is SampleID[0] and dict"""
         pf = Path(file)
         try:
-            pf_Match = self.match_SampleID(pf)
+            pf_Match = match_SampleID(pf)
         except:
             pf_Match = "NoneNoneNone"
         if pf.is_file():
             parent_folder = pf.parent.parts[-1]
 
             try:
-                pf_StemMatch = self.match_SampleID(pf.stem)
+                pf_StemMatch = match_SampleID(pf.stem)
             except:
                 pf_StemMatch = "None"
             try:
-                pf_ParentMatch = self.match_SampleID(parent_folder)
+                pf_ParentMatch = match_SampleID(parent_folder)
             except:
                 pf_ParentMatch = "None"
             if pf_StemMatch == pf_ParentMatch:
@@ -87,7 +83,7 @@ class InterpretFilePath(FilePathParser):
         else:
             parent_folder = pf.name
             SampleID, match = pf_Match, "other"
-            pf_StemMatch, pf_ParentMatch = self.match_SampleID(pf.stem), "None"
+            pf_StemMatch, pf_ParentMatch = match_SampleID(pf.stem), "None"
         #             pf_StemMatch,pf_ParentMatch = 'None', 'None'
         #        if len(pf_Match) < 10:
         #            SampleID = pf_Match
@@ -121,28 +117,70 @@ skipped_Gas_Exp_parts = [
     "20CLS",
 ]
 
-def all_functions(name, fname, fsplit) -> Dict:
 
+def get_most_common_split(name, name_separators=["_", "-"]):
+    sepcounter = Counter([i for i in name if i in name_separators])
+    # split_info.update(**{ name: { 'counter' : sepcounter}})
+    if sepcounter:
+        sep, _nsep = sepcounter.most_common(1)[0]
+        split = name.split(sep)
+    else:
+        split, sep = [], None
+    return split, sepcounter, sep
+
+
+def all_functions(name: str, name_separators=["_", "-"]) -> Dict:
+
+    if not isinstance(fname, str):
+        # in case of given path.parent
+        fname = fname.name
     EC_info = {}
 
-    elec = determine_electrode_name_from_stem(fname)
-    # for nameparent in ['name', 'parent']:
-    # nameparent
-    # fname = getattr(self, nameparent )
-    if not isinstance(fname, str):
-        fname = fname.name
-    # fsplit = getattr(self,f'{nameparent}_split')
-    date = determine_date_from_filename(fsplit)
-    gas_exp = determine_Gas_Exp_from_filename(fname)
-    pH = determine_pH_from_filename(fname)
+    split, sepcounter, sep = get_most_common_split(name)
+    popsplit = split.copy()
+
+    electrode_patterns = [
+        "[Pt]{0,1}[\W][ring]{1}",
+        "disk",
+        "AgAgCl{1}[0-9]{0,1}",
+        "HgO{1}[0-9]{0,1}",
+        "RRDE[0-9]{5}",
+    ]
+
+    elec_res = search_pattern_and_cutout(name, patterns=electrode_patterns)
+    elec_match_res = [i for i in elec_res if i[-1]]
+
+    if not elec_match_res:
+        _n, pattern, name, cut_name, electrode = elec_res[0]
+    elif len(elec_match_res) == 1:
+        _n, pattern, name, cut_name, electrode = elec_match_res[0]
+    else:
+        logger.warning(f"determine electrode from {elec_match_res}")
+
+    testing_formats = ["%Y-%m-%d", "%d.%m.%Y"]
+
+    date_matches = list(datefinder.find_dates(cut_name, source=True))
+    if date_matches:
+        cut_name = cut_name.replace(date_matches[0][1], "")
+        cut_name = string_clean_end_character(cut_name)
+
+    gas_exp = determine_Gas_Exp_from_filename(cut_name)
+    pH = determine_pH_from_filename(cut_name)
     postAST = determine_postAST_from_filename(fname)
 
-    EC_info.update({name : {**{'fname' : fname}, **date, **gas_exp, **pH, **postAST } })
+    EC_info.update({name: {**{"fname": fname}, **date, **gas_exp, **pH, **postAST}})
 
     return EC_info
-        # determine_date_from_filename(self.parent_split)
+    # determine_date_from_filename(self.parent_split)
 
 
+if 0:
+    date_patterns = [
+        "^([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])(\.|-|/)([1-9]|0[1-9]|1[0-2])(\.|-|/)([0-9][0-9]|19[0-9][0-9]|20[0-9][0-9])$|^([0-9][0-9]|19[0-9][0-9]|20[0-9][0-9])(\.|-|/)([1-9]|0[1-9]|1[0-2])(\.|-|/)([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])$"
+    ]
+    date_res = search_pattern_and_cutout(name, patterns=date_patterns)
+
+    date = determine_date_from_filename(cutsplit)
 
 
 # @staticmethod
@@ -327,15 +365,14 @@ def match_SampleID(file, message=False, include_extra=False):
         print('SampleID: "%s" used for %s' % (sampleID, file))
     return str(sampleID.upper())
 
+
 def determine_pH_from_filename(filename: str) -> Dict:
-    ''' determine pH from filename'''
+    """determine pH from filename"""
 
     PAR_file_test = filename
     pH = {}
     while pH == {}:
-        if re.search("H2SO4", PAR_file_test) and not re.search(
-            "HClO4", PAR_file_test
-        ):
+        if re.search("H2SO4", PAR_file_test) and not re.search("HClO4", PAR_file_test):
             if re.search("MeOH", PAR_file_test):
                 if re.search("1M.?MeOH", PAR_file_test):
                     pH = {"pH": 1, "Electrolyte": "0.1MH2SO4+1M-MeOH"}
@@ -399,11 +436,12 @@ def determine_pH_from_filename(filename: str) -> Dict:
 
     return pH
 
+
 def determine_Gas_Exp_from_filename(filename) -> Dict:
-    ''' returns a dict with Gas and Exp type from the filename'''
+    """returns a dict with Gas and Exp type from the filename"""
     basepf = filename
 
-    if ('OCP' or 'RHE') in basepf:
+    if ("OCP" or "RHE") in basepf:
         gas, tpnm, exp_match = "N2", "RHE", "yes"
     elif "N2" in basepf:
         gas = "N2"
@@ -480,12 +518,12 @@ def determine_Gas_Exp_from_filename(filename) -> Dict:
         else:
             gas, tpnm = None, None
     # if "AST SST" in comment_act0_DF:
-        # gas, tpnm = "N2", "AST-SST"
+    # gas, tpnm = "N2", "AST-SST"
     return {"Gas": gas, "PAR_exp": tpnm}
 
 
 def determine_postAST_from_filename(filenamesplit) -> Dict:
-    ''' determine postAST from filenamesplit'''
+    """determine postAST from filenamesplit"""
 
     basepf_split, postAST = filenamesplit, ""
     if any(
@@ -502,43 +540,50 @@ def determine_postAST_from_filename(filenamesplit) -> Dict:
         postAST = "postAST_LC"
     elif any(s in basepf_split for s in ["pAST-sHA"]):
         postAST = "postAST_sHA"
-    elif any("AFTER" in i.upper() for i in filenamesplit) or any(s in basepf_split for s in ["postORR"]):
+    elif any("AFTER" in i.upper() for i in filenamesplit) or any(
+        s in basepf_split for s in ["postORR"]
+    ):
         postAST = "postORR"
     elif any(s in basepf_split for s in ["postAST"]):
         postAST = "postAST"
     else:
-        postAST = "no"
+        postAST = None
     return {"postAST": postAST}
+
 
 def determine_date_from_filename(
     filenamesplit: List, verbose=False, testing_formats=["%Y-%m-%d", "%d.%m.%Y"]
 ) -> Union[None, datetime.datetime]:
-    '''determine date from splitted filename'''
-    Dt_options = []
+    """determine date from splitted filename"""
+    date_options = []
     _verbose = []
     for i in filenamesplit:
         for f in testing_formats:
             try:
-                Dt_options.append(datetime.datetime.strptime(i, f))
+                date_options.append(datetime.datetime.strptime(i, f))
             except ValueError as ve:
                 _verbose.append((i, f, ve))
             except Exception as e:
-                print(f"Datetime file {file}, other error {e} for {i}")
+                logger.warning(f"Datetime file {file}, other error {e} for {i}")
 
-    if Dt_options:
-        if len(Dt_options) == 1:
-            outDt = Dt_options[0]
+    if date_options:
+        if len(date_options) == 1:
+            outDt = date_options[0]
         else:
-            logger.warning(f"Datetime file {'_'.join(filenamesplit)} multiple options {Dt_options}")
-            outDt = Dt_options[0]
+            logger.warning(
+                f"Datetime file {'_'.join(filenamesplit)} multiple options {date_options}"
+            )
+            outDt = date_options[0]
     else:
-        logger.warning("Datetime file {'_'.join(filenamesplit)} has no formatted date options {Dt_options}")
+        logger.warning(
+            f"Datetime file {'_'.join(filenamesplit)} has no formatted date options {date_options}"
+        )
         outDt = None
-    return {'Date' : outDt}
+    return {"Date": outDt}
 
 
 def determine_ink_loading_from_filename(filename, reference_date=None) -> Dict:
-    ''' guesses the ink loading from name'''
+    """guesses the ink loading from name"""
     if not reference_date:
         try:
             reference_date = determine_date_from_filename(filename)
@@ -573,16 +618,54 @@ def determine_ink_loading_from_filename(filename, reference_date=None) -> Dict:
     }
 
 
-def determine_electrode_name_from_stem(stem: str):
+def search_pattern_and_cutout(stem: str, patterns=[], **kwargs) -> Dict:
     """electrode name"""
     # add V3F, etc...
+    # search_and_cut_out(stem, '', flags=re.IGNORECASE)
+    new_stem = copy.deepcopy(stem)
+    res = []
+    for n, pattern in enumerate(patterns):
+        new_stem, match = search_and_cut_out(new_stem, pattern, **kwargs)
+        res.append((n, pattern, stem, new_stem, match))
+    return res
+
+
+def search_and_cut_out(stem: str, pattern: str, **kwargs):
+    # pattern='RRDE[0-9]{5}'
+    search = re.search(pattern, stem, **kwargs)
+    if not search:
+        return stem, search
+    match = search.group()
+    st, end = search.span()
+    cutout_stem = stem[0:st] + stem[end:-1]
+    cutout_stem = string_clean_end_character(cutout_stem)
+    return cutout_stem, match
+
+
+def string_clean_end_character(string):
+    endsw = re.search("[^a-zA-Z0-9]\Z", string)
+    if endsw:
+        string = string[0 : endsw.start()]
+    startsw = re.match("\A[^a-zA-Z0-9]", string)
+    if startsw:
+        string = string[startsw.end() : :]
+    return string
+
+
+if 0:
     if "Pt-ring" in stem or "ring" in stem or "Ring" in stem:
         electrode = "Pt_ring"
     elif "Disk" in stem or "disk" in stem:
         electrode = "disk"
+    elif "AgAgCl" in stem:
+        electrode = "AgAgCl"
+    elif "HgO" in stem:
+        electrode = "HgO"
+    elif "RRDE" in stem:
+        pass
     else:
-        electrode = "Unknown"
-    return {'electrode_type': electrode}
+        electrode = None
+    # return {'electrode_type': electrode}
 
 
 def _depr_filestem_to_sid_and_pos(stem: str, seps=("_", " ", "-")) -> Tuple[str, str]:
@@ -657,4 +740,3 @@ def format_filename(s):
     filename = "".join(c for c in s if c in valid_chars)
     filename = filename.replace(" ", "_")  # I don't like spaces in filenames.
     return filename
-
