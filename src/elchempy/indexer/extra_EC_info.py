@@ -1,3 +1,5 @@
+
+import datetime
 import numpy as np
 import pandas as pd
 
@@ -6,7 +8,7 @@ class EC_Properties:
     """Some properties of electrochemical experiments collected and reference values"""
 
     def __init__(self):
-        self.electorode_SA = self.WE_surface_area_cm2()
+        self.electorode_SA = WE_surface_area_cm2()
 
 def WE_surface_area_cm2(TYPE="PINE"):
     coll_eff = []
@@ -49,9 +51,18 @@ def loading_ref(PAR_date):
 
     WE_SA = WE_surface_area_cm2()["Disk_cm2"]
 
-    if PAR_date < pd.to_datetime("20190901") and PAR_date > pd.to_datetime(
-        "20190827"
-    ):
+    default_loading_var = {
+        "high": ((9.5 / 250) * 5) / WE_SA,
+        "normal": ((5 / 250) * 5) / WE_SA,
+        "low": ((2 / 250) * 5) / WE_SA,
+        "standard": (5 / 500) * 9 / WE_SA,
+        "half": 0.5 * (5 / 250) * 5 / WE_SA,
+        "loading-ref-unknown": (5 / 500) * 9 / WE_SA,
+    }
+    if not PAR_date:
+        return default_loading_var
+
+    if PAR_date < datetime.date(2019,9,1) and PAR_date > datetime.date(2019,8,27):
         loading_var = {
             "high": ((9.5 / 250) * 5) / WE_SA,
             "normal": ((5 / 250) * 5) / WE_SA,
@@ -60,9 +71,7 @@ def loading_ref(PAR_date):
             "half": 0.5 * (5 / 250) * 5 / WE_SA,
             "loading-ref-unknown": (5 / 500) * 9 / WE_SA,
         }
-    elif PAR_date <= pd.to_datetime("20190911") and PAR_date >= pd.to_datetime(
-        "20190909"
-    ):
+    elif PAR_date <= datetime.date(2019,9,11) and PAR_date >= datetime.date(2019,9,9):
         loading_var = {
             "high": ((9.5 / 250) * 5) / WE_SA,
             "normal": ((5 / 250) * 5) / WE_SA,
@@ -71,7 +80,7 @@ def loading_ref(PAR_date):
             "half": 0.5 * (5 / 250) * 5 / WE_SA,
             "loading-ref-unknown": (5 / 500) * 9 / WE_SA,
         }
-    elif PAR_date == pd.to_datetime("20190912"):
+    elif PAR_date == datetime.date(2019,9,12):
         loading_var = {
             "high": ((9.5 / 250) * 5) / WE_SA,
             "normal": ((5 / 250) * 5) / WE_SA,
@@ -81,14 +90,7 @@ def loading_ref(PAR_date):
             "loading-ref-unknown": (5 / 500) * 9 / WE_SA,
         }
     else:
-        loading_var = {
-            "high": ((9.5 / 250) * 5) / WE_SA,
-            "normal": ((5 / 250) * 5) / WE_SA,
-            "low": ((2 / 250) * 5) / WE_SA,
-            "standard": (5 / 500) * 9 / WE_SA,
-            "half": 0.5 * (5 / 250) * 5 / WE_SA,
-            "loading-ref-unknown": (5 / 500) * 9 / WE_SA,
-        }
+        loading_var = default_loading_var
     return loading_var
 
 @staticmethod
