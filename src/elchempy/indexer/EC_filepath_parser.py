@@ -22,22 +22,29 @@ from elchempy.indexer.extra_EC_info import loading_ref, WE_surface_area_cm2
 from elchempy.config import LOCAL_FILES
 
 ### 3rd Party imports
+
 import datefinder
+
 import dateutil
+from dateutil.parser import ParserError
 
 #%%
 def _dev():
     import pandas as pd
-    fname = LOCAL_FILES[1]
+
+    fname = LOCAL_FILES[7]
     ecpps = []
     for fname in LOCAL_FILES:
         sid = ElchemPathParser(fname)
         ecpps.append(sid)
-    aa=pd.concat([pd.DataFrame(i.EC_info_entry).T for i in ecpps])
+    aa = pd.concat([pd.DataFrame(i.EC_info_entry).T for i in ecpps])
+    bb = pd.concat([pd.DataFrame(i.EC_info_undetermined).T for i in ecpps])
     return aa, ecpps
 
+
 class ElchemPathParserError(Exception):
-    ''' raises errors from ElchemPathParser'''
+    """raises errors from ElchemPathParser"""
+
 
 class ElchemPathParser(Path):
     """Find or Guess the SampleID that is assiociated with the filename"""
@@ -47,32 +54,48 @@ class ElchemPathParser(Path):
     name_separators = ["_", "-"]
 
     def __init__(self, *args, **kwargs):
+        self.fpp = FilePathParser(self)
         # super().__init__(*args, **kwargs)
-        # self.split_info = {}
-        # self.name_split = self.get_most_common_split(self.stem)
-        # self.parent_split = self.get_most_common_split(self.parent.name)
-        # self.EC_info = {'fullpath' : str(self)}
-        # parent_info = tokenize_name_into_remainder( self.parent.name)
+
         parent_info = ElchemPathParser.call_tokenizer_on_part(self.parent.name)
-        if parent_info.get('date_dt', None):
-            date_from_parent = parent_info.get('date_dt', None)
-        stem_info = ElchemPathParser.call_tokenizer_on_part(self.stem, date_from_parent=date_from_parent)
-        self.EC_info_parts = {'parent' :parent_info, 'stem' : stem_info}
+        if parent_info.get("date_dt", None):
+            date_from_parent = parent_info.get("date_dt", None)
+        stem_info = ElchemPathParser.call_tokenizer_on_part(
+            self.stem, date_from_parent=date_from_parent
+        )
+
+        self.EC_info_parts = {"parent": parent_info, "stem": stem_info}
         self.EC_info_merged = ElchemPathParser.merge_info_parts(self.EC_info_parts)
 
         self.EC_info = {}
         if self.EC_info_merged:
-            self.EC_info = {k:val for k,val in self.EC_info_merged.items() if val['options'] == 1}
-            self.EC_info_undetermined = {k: val for k,val in self.EC_info_merged.items() if val['options'] != 1}
-        self.EC_info_entry= {str(self) : {k: val['value'] for k,val in self.EC_info.items()}}
+            self.EC_info = {
+                k: val for k, val in self.EC_info_merged.items() if val["options"] == 1
+            }
+            self.EC_info_undetermined = {
+                str(self): {
+                    k: ",".join(val["value"])
+                    for k, val in self.EC_info_merged.items()
+                    if val["options"] > 1
+                }
+            }
+            self.EC_info_undetermined[str(self)].update(
+                **{"parent": self.parent.name, "stem": self.stem}
+            )
+        self.EC_info_entry = {
+            **{"PAR_file": str(self)},
+            **{k: val["value"] for k, val in self.EC_info.items()},
+        }
 
     @staticmethod
     def call_tokenizer_on_part(name, date_from_parent=None):
         try:
             info = tokenize_name_into_remainder(name, date_from_parent=date_from_parent)
         except ElchemPathParserError as ex:
-            raise ElchemPathParserError(f'Error in tokenizer of name: {str(name)}') from ex
-            info = {'tokenize_error' : ex, 'tokenize_name' : name}
+            raise ElchemPathParserError(
+                f"Error in tokenizer of name: {str(name)}"
+            ) from ex
+            info = {"tokenize_error": ex, "tokenize_name": name}
         return info
 
     @staticmethod
@@ -80,44 +103,50 @@ class ElchemPathParser(Path):
         # {str(self):
         keys = EC_info_parts.keys()
         subkeys = set([i for val in EC_info_parts.values() for i in val.keys()])
-        merged_info= {}
+        merged_info = {}
         for skey in subkeys:
             key_skey_vals = {k: EC_info_parts[k].get(skey, None) for k in keys}
-            true_skeys = {k:val for k,val in key_skey_vals.items() if val}
+            true_skeys = {k: val for k, val in key_skey_vals.items() if val}
             settruekeys = set(true_skeys.values())
 
-            mcol = {skey: {'value' : None, 'source': None, 'options' : 0}}
+            mcol = {skey: {"value": None, "source": None, "options": 0}}
             if not true_skeys:
                 pass
                 # merge_col.append(mcol)
             if len(true_skeys) == 1 or len(settruekeys) == 1:
-                mcol[skey]['value'] = list(true_skeys.values())[0]
-                mcol[skey]['source'] = list(true_skeys.keys())[0]
-                mcol[skey]['options'] = 1
+                mcol[skey]["value"] = list(true_skeys.values())[0]
+                mcol[skey]["source"] = list(true_skeys.keys())[0]
+                mcol[skey]["options"] = 1
             elif len(true_skeys) > 1 and not len(settruekeys) == 1:
 
-                if 'electrode' in skey:
-                    for n,(elk,elval) in enumerate(true_skeys.items()):
-                        mcol[f'{skey}_{n}'] = {'value' : elval, 'source' :elk,'options' : 1}
-                elif 'fname' in skey:
-                    mcol[skey]['source'] = f'{skey}_{"_".join(true_skeys.keys())}'
-                    mcol[skey]['value'] ="/".join(true_skeys.values())
-                    mcol[skey]['options'] = 1
-                elif skey in ['Electrolyte','PAR_exp']:
+                if "electrode" in skey:
+                    for n, (elk, elval) in enumerate(true_skeys.items()):
+                        mcol[f"{skey}_{n}"] = {
+                            "value": elval,
+                            "source": elk,
+                            "options": 1,
+                        }
+                elif "fname" in skey:
+                    mcol[skey]["source"] = f'{skey}_{"_".join(true_skeys.keys())}'
+                    mcol[skey]["value"] = "/".join(true_skeys.values())
+                    mcol[skey]["options"] = 1
+                elif skey in ["Electrolyte", "PAR_exp"] or skey.startswith("Loading"):
                     # take value for merge from stem
-                    stemk = true_skeys.get('stem', None)
+                    stemk = true_skeys.get("stem", None)
                     if stemk:
-                        mcol[skey]['value'] = stemk
-                        mcol[skey]['source'] = 'stem'
-                        mcol[skey]['options'] = 1
+                        mcol[skey]["value"] = stemk
+                        mcol[skey]["source"] = "stem"
+                        mcol[skey]["options"] = 1
 
                 else:
-                    mcol[skey]['value'] = tuple(true_skeys.values())
-                    mcol[skey]['source'] = tuple(true_skeys.keys())
-                    mcol[skey]['options'] = len(true_skeys)
+                    mcol[skey]["value"] = tuple(true_skeys.values())
+                    mcol[skey]["source"] = tuple(true_skeys.keys())
+                    mcol[skey]["options"] = len(true_skeys)
 
             merged_info.update(**mcol)
         return merged_info
+
+
 #%%
 
 skipped_Electrolytes = ["H2SO4", "HClO4", "MeOH", "KOH", "NaOH", "H2O2"]
@@ -138,6 +167,7 @@ skipped_Gas_Exp_parts = [
     "20CLS",
 ]
 
+
 def get_most_common_split(name, name_separators=["_", "-"]):
     sepcounter = Counter([i for i in name if i in name_separators])
     # split_info.update(**{ name: { 'counter' : sepcounter}})
@@ -148,22 +178,22 @@ def get_most_common_split(name, name_separators=["_", "-"]):
         split, sep = [], None
     return split, sepcounter, sep
 
+
 # fname ='OCP_RHE_AgAgCl4_POST-EXP'
-from dateutil.parser import ParserError
+
+
 def tokenize_name_into_remainder(
-                                 fname: str,
-                                 name_separators=["_", "-",' '],
-                                 date_from_parent=None
-                                 ) -> Dict:
+    fname: str, name_separators=["_", "-", " "], date_from_parent=None
+) -> Dict:
 
     if not isinstance(fname, str):
         # in case of given path.parent
         if not isinstance(fname, Path):
-            raise TypeError('Given name to tokenizer is not a string nor Path')
+            raise TypeError("Given name to tokenizer is not a string nor Path")
         fname = fname.name
 
-    EC_info = {'fname' : fname}
-    sepstr = ''.join(name_separators)
+    EC_info = {"fname": fname}
+    sepstr = "".join(name_separators)
 
     split, sepcounter, sep = get_most_common_split(fname)
     # popsplit = split.copy()
@@ -173,7 +203,9 @@ def tokenize_name_into_remainder(
     # remainder_name = sep.join(list(filter(bool, remainder_name.split(sep))))
     # patterns=electrode_patterns
     # sepstr
-    remainder_name, EC_info  = determine_electrode_name(remainder_name, EC_info, patterns= [], **tok_dec_kwargs)
+    remainder_name, EC_info = determine_electrode_name(
+        remainder_name, EC_info, patterns=[], **tok_dec_kwargs
+    )
 
     # TODO Continue with tokenizer
 
@@ -183,8 +215,10 @@ def tokenize_name_into_remainder(
     date_matches = list(datefinder.find_dates(remainder_name, source=True))
     if not date_matches:
         date_matches = []
-        digitlensplit = [sp for sp in  split if len(''.join([i for i in sp if i.isdigit()])) >= 5]
-        for sp in digitlensplit :
+        digitlensplit = [
+            sp for sp in split if len("".join([i for i in sp if i.isdigit()])) >= 5
+        ]
+        for sp in digitlensplit:
             try:
                 dt_parse = dateutil.parser.parse(sp)
                 date_matches.append((dt_parse, sp))
@@ -193,103 +227,109 @@ def tokenize_name_into_remainder(
 
     # date_matches = list(year_date_finder.find_dates(remainder_name, source=True))
 
-    date_info = {'date_dt' : None}
+    date_info = {"date_dt": None}
     if len(date_matches) == 1:
         remainder_name = replace_and_strip(remainder_name, date_matches[0][1], sepstr)
-        dt =date_matches[0][0]
+        dt = date_matches[0][0]
         date = datetime.date(dt.year, dt.month, dt.day)
-        date_info = {'date_dt' : date, 'date_source' : date_matches[0][1]}
+        date_info = {"date_dt": date, "date_source": date_matches[0][1]}
     elif len(date_matches) > 1:
-        logger.warning(f"datefinder from {remainder_name}, {','.join(map,str(date_matches))}")
+        logger.warning(
+            f"datefinder from {remainder_name}, {','.join(map,str(date_matches))}"
+        )
         # string_clean_end_character()
     EC_info.update(**date_info)
 
-    remainder_name, EC_info = determine_Gas_Exp_from_filename(remainder_name, EC_info, **tok_dec_kwargs )
+    remainder_name, EC_info = determine_Gas_Exp_from_filename(
+        remainder_name, EC_info, **tok_dec_kwargs
+    )
 
-    remainder_name, EC_info = determine_pH_from_filename(remainder_name, EC_info, **tok_dec_kwargs )
+    remainder_name, EC_info = determine_pH_from_filename(
+        remainder_name, EC_info, **tok_dec_kwargs
+    )
 
     # @tokenizer_decorator
-    remainder_name, EC_info = determine_postAST_from_filename(remainder_name, EC_info, **tok_dec_kwargs )
+    remainder_name, EC_info = determine_postAST_from_filename(
+        remainder_name, EC_info, **tok_dec_kwargs
+    )
 
-    if date_from_parent and not date_info.get('date_dt'):
+    if date_from_parent and not date_info.get("date_dt"):
         reference_date = date_from_parent
     else:
-        reference_date = date_info['date_dt']
+        reference_date = date_info["date_dt"]
 
-    remainder_name, EC_info = determine_ink_loading_from_filename(remainder_name, EC_info, reference_date= reference_date, **tok_dec_kwargs )
+    remainder_name, EC_info = determine_ink_loading_from_filename(
+        remainder_name, EC_info, reference_date=reference_date, **tok_dec_kwargs
+    )
 
     # remainder_name, EC_info = determine_instrument_from_filename(remainder_name, EC_info, **tok_dec_kwargs )
 
-    instrument_patterns = {'Instrument' : ['bipot|V3(|F)|cell([1-9]{0,1})']}
-    rpm_patterns = {'RPM' : ['[0-9]{3,4}(rpm|rmp)']}
-    template_patterns = {'template_file' : [
-        "([A-Z]{2,3}xx)|(templ|template)\Z"]}
-    rhe_potential_mV_patterns = {'RHE_potential_mV' : [
-        "[0-9]{3}\Z"]}
+    instrument_patterns = {"Instrument": ["bipot|V3(|F)|cell([1-9]{0,1})"]}
+    rpm_patterns = {"RPM": ["[0-9]{3,4}(rpm|rmp)"]}
+    template_patterns = {"template_file": ["([A-Z]{2,3}xx)|(templ|template)\Z"]}
+    rhe_potential_mV_patterns = {"RHE_potential_mV": ["[0-9]{3}\Z"]}
 
-    all_extra_patterns = {**instrument_patterns , **rpm_patterns, **template_patterns, **rhe_potential_mV_patterns }
+    all_extra_patterns = {
+        **instrument_patterns,
+        **rpm_patterns,
+        **template_patterns,
+        **rhe_potential_mV_patterns,
+    }
 
     for pattname, patterns in all_extra_patterns.items():
 
-        remainder_name, EC_info = tokenize_name_from_patterns(remainder_name, EC_info, patterns= patterns, token_name=pattname, **tok_dec_kwargs )
+        remainder_name, EC_info = tokenize_name_from_patterns(
+            remainder_name,
+            EC_info,
+            patterns=patterns,
+            token_name=pattname,
+            **tok_dec_kwargs,
+        )
 
+    template_file_found = EC_info.get("template_file_0", None)
+    remainder_name, EC_info = match_SampleID(
+        remainder_name,
+        EC_info,
+        template_file_found=template_file_found,
+        **tok_dec_kwargs,
+    )
 
-    # remainder_name, EC_info = tokenize_name_from_patterns(remainder_name, EC_info, patterns= rhe_potential_mV_patterns , token_name='potential_mV', **tok_dec_kwargs )
-
-    remainder_name, EC_info = match_SampleID(remainder_name, EC_info, **tok_dec_kwargs )
-    # remainder_name = replace_and_strip(remainder_name, '', sepstr)
-    # EC_info.update(**instr)
-    # remainder_name = replace_and_strip(remainder_name, sampleID, sepstr)
-    EC_info.update(**{'token_remainder' : remainder_name})
+    EC_info.update(**{"token_remainder": remainder_name})
 
     return EC_info
-#%%
-    # determine_date_from_filename(self.parent_split)
-    # EC_info.update({name: {**{"fname": fname}, **date, **gas_exp, **pH, **postAST}})
 
-def _test_pattern(name, patterns : dict):
+
+#%%
+def _test_pattern(name, patterns: dict):
     for pn, pl in patterns.items():
         for p in pl:
-            m=re.search(p, name)
-            print(f'{pn} {p}: {m}')
-if 0:
-    if any(gas_exp.values()):
-        for val in gas_exp.values():
-            remainder_name = replace_and_strip(remainder_name, val, sepstr)
-    EC_info.update(**gas_exp)
-
-    pH = determine_pH_from_filename(remainder_name )
-    if pH.get("Electrolyte", None):
-        remainder_name = replace_and_strip(remainder_name, pH.get("Electrolyte", ''), sepstr)
-    EC_info.update(**pH)
-
-if 0:
-    postAST = determine_postAST_from_filename(remainder_name)
-    if any(postAST.values()):
-        for val in postAST.values():
-            remainder_name = replace_and_strip(remainder_name, val, sepstr)
-    EC_info.update(**postAST)
+            m = re.search(p, name)
+            print(f"{pn} {p}: {m}")
 
 
-def my_decorator(func):
-    @wraps(func)
-    def wrapper(*args,**kwargs):
-        print(f"calling dec func: {func}")
-        return func(*args,**kwargs)
-    return wrapper
-
-def tokenizer_decorator(func):
-    '''
+def tokenizer_decorator(func, **kwargs):
+    """
     This decorator wraps around a tokenizer function.
     It adds the token to the info dict and removes the found token from the given name.
-    '''
+    """
     if not callable(func):
-        raise TypeError(f'func {func} not callable')
+        raise TypeError(f"func {func} not callable")
 
     @wraps(func)
     def wrapper(name, info, **kwargs):
+
         try:
-            token = func(name)
+            if ("patterns" and "token_name") in kwargs:
+                token = func(name, **kwargs)
+            elif "reference_date" in kwargs:
+                token = func(name, reference_date=kwargs.get("reference_date", None))
+            elif "template_file_found" in kwargs:
+                token = func(
+                    name, template_file_found=kwargs.get("template_file_found", None)
+                )
+
+            else:
+                token = func(name)
         except TypeError as ex:
             raise ElchemPathParserError(ex) from ex
             return name, info
@@ -297,38 +337,55 @@ def tokenizer_decorator(func):
             raise ElchemPathParserError(ex) from ex
             return name, info
         if not token:
-            logger.warning(f'Wrapper no token found for {func}, {name}')
+            # logger.warning(f'Wrapper no token found for {func}, {name}')
             return name, info
-
-        if any(token.values()):
-            for val in token.values():
-                name = replace_and_strip(name, val, **kwargs)
+        str_token_values = [i for i in token.values() if isinstance(i, str)]
+        str_token_values_in_name = [i for i in str_token_values if i in name]
+        if str_token_values:
+            for val in str_token_values_in_name:
+                val_is_subset = [
+                    i
+                    for i in str_token_values_in_name
+                    if val in i and len(i) > len(val)
+                ]
+                if not val_is_subset:
+                    name = replace_and_strip(name, val, **kwargs)
         info.update(**token)
-        print("wrapper token:",info,'\nname',name)
+        # print("wrapper token:",info,'\nname',name)
         return name, info
+
     return wrapper
 
+
 @tokenizer_decorator
-def tokenize_name_from_patterns(name, patterns= [], token_name='', **kwargs):
-    ''' tokenize a string from certain patterns'''
+def tokenize_name_from_patterns(name, patterns=None, token_name="", **kwargs):
+    """tokenize a string from certain patterns"""
 
     pattern_res = search_pattern_and_cutout(name, patterns=patterns)
     info_res = {}
     for n, res in enumerate([i for i in pattern_res if i[-1]]):
         # name = replace_and_strip(name, res[-1], stripchars)
-        info_res= {**info_res, **{f'{token_name}_{n}' : res[-1]}}
+        info_res = {**info_res, **{f"{token_name}_{n}": res[-1]}}
+    logger.warning(
+        f"Info found for patterns{patterns} on {name}, {token_name}, {info_res}"
+    )
     return info_res
 
-def search_pattern_and_cutout(stem: str, patterns=[], **kwargs) -> Dict:
+
+def search_pattern_and_cutout(stem: str, patterns=None, **kwargs) -> List:
     """electrode name"""
     # add V3F, etc...
     # search_and_cut_out(stem, '', flags=re.IGNORECASE)
     # new_stem = copy.deepcopy(stem)
     res = []
+    if not patterns:
+        return res
+
     for n, pattern in enumerate(patterns):
         new_stem, match = search_and_cut_out(stem, pattern, **kwargs)
         res.append((n, pattern, stem, new_stem, match))
     return res
+
 
 def search_and_cut_out(stem: str, pattern: str, **kwargs):
     # pattern='RRDE[0-9]{5}'
@@ -341,56 +398,28 @@ def search_and_cut_out(stem: str, pattern: str, **kwargs):
     cutout_stem = string_clean_end_character(cutout_stem)
     return cutout_stem, match
 
-if 0:
-    def wrapper(*args,**kwargs):
-        print(f"calling dec func: {func}")
-        return func(*args,**kwargs)
-        return wrapper
 
-    @tokenizer_decorator
-    def example(*args):
-        '''example docstr'''
-        print('called example func')
-
-    example('name',123)
-
-def call_specific_tokenizer(func: callable, name: str, info: dict, **kwargs):
-    if not callable(func):
-        raise TypeError(f'func {func} not callable')
-
-    try:
-        token = func(name)
-    except TypeError as ex:
-        raise ElchemPathParserError(ex) from ex
-        return info
-    except Exception as ex:
-        raise ElchemPathParserError(ex) from ex
-        return info
-
-    if any(token.values()):
-        for val in token.values():
-            name = replace_and_strip(name, val, **kwargs)
-    info.update(**token)
-    return name, info
-
-
-def replace_and_strip(name:str, value:str, stripchars: str= '_-', replace_with :str='', separator=None, **kwargs):
+def replace_and_strip(
+    name: str,
+    value: str,
+    stripchars: str = "_-",
+    replace_with: str = "",
+    separator=None,
+    **kwargs,
+):
     if not name or not value:
         return name
 
     if not isinstance(value, str):
         return name.strip(stripchars)
-        # if isinstance(value, float):
-        #     value = str(round(value, 3))
-        # if isinstance(value, int):
-        #     value = str(value)
-    logger.error(f'replace and strip: {name} with {value}')
+    logger.error(f"replace and strip: {name} with {value}")
     if value in name:
         name = name.replace(value, replace_with)
         if separator:
             name = separator.join(list(filter(bool, name.split(separator))))
 
     return name.strip(stripchars)
+
 
 if 0:
     date_patterns = [
@@ -399,61 +428,45 @@ if 0:
     date_res = search_pattern_and_cutout(name, patterns=date_patterns)
     date = determine_date_from_filename(cutsplit)
 
-if 0:
-    elec_match_res = 0
-    electrode = None
-    # for elec_match_res
-    if not elec_match_res:
-        _n, pattern, name, remainder_name, electrode = elec_res[0]
-    elif len(elec_match_res) == 1:
-        _n, pattern, name, remainder_name, electrode = elec_match_res[0]
-    else:
-        logger.warning(f"determine electrode from {elec_match_res}")
-    elec_info = {'electrode' : electrode}
-    EC_info.update(**elec_info)
 
-
-def determine_instrument_from_filename(name: str, info: dict, **kwargs) -> Tuple[str, dict]:
-    ''' instrument from filename'''
-    bipot = re.search('bipot|V3F',name)
+def determine_instrument_from_filename(
+    name: str, info: dict, **kwargs
+) -> Tuple[str, dict]:
+    """instrument from filename"""
+    bipot = re.search("bipot|V3F", name)
     if bipot:
         source = bipot.group(0)
-        name = name[0:bipot.span()[0]]+name[bipot.span()[1]::]
+        name = name[0 : bipot.span()[0]] + name[bipot.span()[1] : :]
     else:
         source = None
     # v3f = re.search('V3F',remainder_name)
-    info.update(**{'Instrument' : source})
+    info.update(**{"Instrument": source})
     return name, info
-
-
-def recognize_element(self, elem):
-    sid = self.try_find_sampleID(elem)
 
 
 @tokenizer_decorator
 def determine_electrode_name(name, **kwargs):
-    ''' electrode names '''
+    """electrode names"""
     electrode_patterns = [
         "(Pt|pt)[-]{0,1}[\W]ring",
         "(PDX_Ch1_|)disk",
         "(PDX_Ch2_|)ring",
-        "AgAgCl{1}[0-9]{0,1}",
-        "HgO{1}[0-9]{0,1}",
-        "RRDE[0-9]{5}",
-        "RHE"
+        "AgAgCl[1-9]{0,1}",
+        "HgO[1-9]{0,1}",
+        "RRDE[1-9]{0,1}[0-9]{4}",
+        "RHE[1-9]{0,1}",
     ]
 
     elec_res = search_pattern_and_cutout(name, patterns=electrode_patterns)
     info_res = {}
     for n, res in enumerate([i for i in elec_res if i[-1]]):
         # name = replace_and_strip(name, res[-1], stripchars)
-        info_res= {**info_res, **{f'electrode_{n}' : res[-1]}}
+        info_res = {**info_res, **{f"electrode_{n}": res[-1]}}
     return info_res
 
 
-
 @tokenizer_decorator
-def try_find_sampleID(file):
+def try_find_sampleID(file, template_file_found=None):
     """Input string or Path and output is SampleID[0] and dict"""
     pf = Path(file)
     try:
@@ -498,15 +511,16 @@ def try_find_sampleID(file):
     return SampleID, sID_MatchOut
 
 
-
 @tokenizer_decorator
-def match_SampleID(file, message=False, include_extra=False) -> Dict:
+def match_SampleID(
+    file, message=False, include_extra=False, template_file_found=None
+) -> Dict:
     """finds a possible match in the filename with a known sample id"""
     #        message = True
     if not file:
         return None
 
-    formatID_matches, sampleID = [], []
+    formatID_matches, sampleID = [], None
     # if '-' in file.name and not '_' in file.name
     # if not '_' in file and '-' in file:
     # filename = file.name.replace('-','_')
@@ -530,7 +544,11 @@ def match_SampleID(file, message=False, include_extra=False) -> Dict:
         if i.upper() not in skip_parts and re.search("[a-zA-Z]", i)
     ]
 
-    while sampleID == []:
+    while not sampleID:
+
+        if template_file_found:
+            sampleID = template_file_found
+
         Pt_ring_match = [
             re.search("(?<=(pt)){0,1}.{0,1}ring{0,1}", i, re.IGNORECASE)
             for i in FileParts
@@ -574,6 +592,15 @@ def match_SampleID(file, message=False, include_extra=False) -> Dict:
                 ]
             ):
                 formatID_matches = ["template"]
+            elif any(
+                [
+                    i
+                    for i in FileParts
+                    if re.search("([A-Z]{2,3}xx)|(templ|template)\Z", i, re.IGNORECASE)
+                ]
+            ):
+                formatID_matches = ["template"]
+
             elif "NW" in FileParts:
                 formatID_matches = [
                     i for i in FileParts if re.search(".?NW_M.?", i, re.IGNORECASE)
@@ -681,7 +708,8 @@ def match_SampleID(file, message=False, include_extra=False) -> Dict:
 
     if message:
         print('SampleID: "%s" used for %s' % (sampleID, file))
-    return {'SampleID' : str(sampleID.upper())}
+    return {"SampleID": str(sampleID.upper())}
+
 
 @tokenizer_decorator
 def determine_pH_from_filename(filename: str) -> Dict:
@@ -751,8 +779,9 @@ def determine_pH_from_filename(filename: str) -> Dict:
             pH = {"pH": 1, "Electrolyte": "0.1MH2SO4_acid"}
         else:
             pH = {"pH": None, "Electrolyte": None}
-                  # "Other_{PAR_file_test}"}
+            # "Other_{PAR_file_test}"}
     return pH
+
 
 @tokenizer_decorator
 def determine_Gas_Exp_from_filename(filename) -> Dict:
@@ -789,7 +818,7 @@ def determine_Gas_Exp_from_filename(filename) -> Dict:
                 tpnm = "EIS+CV"
             elif "HER" in basepf:
                 tpnm = "EIS_HER"
-            elif 'EIS-range' in basepf:
+            elif "EIS-range" in basepf:
                 tpnm = "EIS-range"
             else:
                 tpnm = "EIS"
@@ -811,7 +840,11 @@ def determine_Gas_Exp_from_filename(filename) -> Dict:
         elif "CV" in basepf:
             tpnm = "ORR-CV"
         elif "EIS" in basepf and not "ORR" in basepf:
-            tpnm = "EIS"
+            if "EIS-range" in basepf:
+                tpnm = "EIS-range"
+            else:
+                tpnm = "EIS"
+
         elif "LC" in basepf and not "ORR" in basepf:
             tpnm = "AST-LC"
         elif "SST" in basepf and not "ORR" in basepf:
@@ -843,6 +876,7 @@ def determine_Gas_Exp_from_filename(filename) -> Dict:
     # gas, tpnm = "N2", "AST-SST"
     return {"Gas": gas, "PAR_exp": tpnm}
 
+
 @tokenizer_decorator
 def determine_postAST_from_filename(filenamesplit) -> Dict:
     """determine postAST from filenamesplit"""
@@ -868,8 +902,8 @@ def determine_postAST_from_filename(filenamesplit) -> Dict:
         postAST = "postORR"
     elif any(s in basepf_split for s in ["postAST"]):
         postAST = "postAST"
-    elif 'POST-EXP' in basepf_split:
-        postAST = 'POST-EXP'
+    elif "POST-EXP" in basepf_split:
+        postAST = "POST-EXP"
     else:
         postAST = None
     return {"postAST": postAST}
@@ -904,25 +938,33 @@ def determine_date_from_filename(
         outDt = None
     return {"Date": outDt}
 
+
 @tokenizer_decorator
-def determine_ink_loading_from_filename(filename, reference_date=None, **kwargs) -> Dict:
+def determine_ink_loading_from_filename(filename, reference_date=None) -> Dict:
     """guesses the ink loading from name"""
-    if not reference_date:
-        reference_date = kwargs.get('date_dt', None)
+    print("ref date in ", reference_date)
+    # if not reference_date:
+    # reference_date = kwargs.get('date_dt', None)
 
     if not reference_date:
         _default = datetime.datetime(2000, 1, 1)
         try:
-            reference_date = determine_date_from_filename(filename).get('Date', _default)
+            reference_date = determine_date_from_filename(filename).get(
+                "Date", _default
+            )
         except Exception as exc:
             reference_date = _default
 
-    loading_variation_ref = loading_ref(reference_date)
+    loading_variation_ref = loading_ref(PAR_date=reference_date)
     #        basepf_split = acid.query('Loading_name == "loading-unknown"').basename.iloc[0].split('_')
     guesses = ["load", "loading", "low-load", "high-load", "normal-load", "half-load"]
     matches = []
+    match = None
     if any(s in filename for s in guesses):
         matches = [s for s in guesses if s in filename]
+        if matches:
+            match = max(matches, key=lambda x: len(x))
+
         if any("low" in match for match in matches):
             loading_name = "low"
         #                    print('low', filename)
@@ -940,9 +982,11 @@ def determine_ink_loading_from_filename(filename, reference_date=None, **kwargs)
         loading_cm2 = loading_variation_ref[loading_name]
     return {
         "Loading_name": loading_name,
-        "Loading_cm2": round(loading_cm2, 3),
+        "Loading_mgcm2": round(loading_cm2, 3),
         "Loading_date": reference_date,
+        "Loading_source": match,
     }
+
 
 def string_clean_end_character(string):
     endsw = re.search("[^a-zA-Z0-9]\Z", string)
@@ -952,22 +996,6 @@ def string_clean_end_character(string):
     if startsw:
         string = string[startsw.end() : :]
     return string
-
-
-if 0:
-    if "Pt-ring" in stem or "ring" in stem or "Ring" in stem:
-        electrode = "Pt_ring"
-    elif "Disk" in stem or "disk" in stem:
-        electrode = "disk"
-    elif "AgAgCl" in stem:
-        electrode = "AgAgCl"
-    elif "HgO" in stem:
-        electrode = "HgO"
-    elif "RRDE" in stem:
-        pass
-    else:
-        electrode = None
-    # return {'electrode_type': electrode}
 
 
 def _depr_filestem_to_sid_and_pos(stem: str, seps=("_", " ", "-")) -> Tuple[str, str]:

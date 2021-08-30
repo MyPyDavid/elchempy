@@ -130,19 +130,19 @@ class FilePathParser(Path):
         self._qcnm = self.__class__.__qualname__
         # self.stats_ = None
         self.data = None
-        self.pathparse_results = {"FilePath": self, "file_exists": self.exists()}
+        self.FP_info = {"FilePath": self, "file_exists": self.exists()}
         if self.exists() and self.is_file():
-            self.pathparse_results.update(
+            self.FP_info.update(
                 **{
                     "fID": self.get_rfID_from_path(self),
                     "FileStem": self.stem,
                     "PAR_file": str(self),
-                    "FileParent": self.parent,
+                    "FileParent": self.parent.name,
                 }
             )
             self.filestats = self.get_dict_from_fstat(self)
 
-            self.pathparse_results.update(**self.filestats)
+            self.FP_info.update(**self.filestats)
             # self.parse_result = self.collect_parse_results(**kwargs)
 
     @staticmethod

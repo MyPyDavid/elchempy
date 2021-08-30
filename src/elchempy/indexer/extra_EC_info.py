@@ -1,4 +1,3 @@
-
 import datetime
 import numpy as np
 import pandas as pd
@@ -9,6 +8,7 @@ class EC_Properties:
 
     def __init__(self):
         self.electorode_SA = WE_surface_area_cm2()
+
 
 def WE_surface_area_cm2(TYPE="PINE"):
     coll_eff = []
@@ -47,7 +47,7 @@ def WE_surface_area_cm2(TYPE="PINE"):
     }
 
 
-def loading_ref(PAR_date):
+def loading_ref(PAR_date=None):
 
     WE_SA = WE_surface_area_cm2()["Disk_cm2"]
 
@@ -62,7 +62,7 @@ def loading_ref(PAR_date):
     if not PAR_date:
         return default_loading_var
 
-    if PAR_date < datetime.date(2019,9,1) and PAR_date > datetime.date(2019,8,27):
+    if PAR_date < datetime.date(2019, 9, 1) and PAR_date > datetime.date(2019, 8, 27):
         loading_var = {
             "high": ((9.5 / 250) * 5) / WE_SA,
             "normal": ((5 / 250) * 5) / WE_SA,
@@ -71,7 +71,9 @@ def loading_ref(PAR_date):
             "half": 0.5 * (5 / 250) * 5 / WE_SA,
             "loading-ref-unknown": (5 / 500) * 9 / WE_SA,
         }
-    elif PAR_date <= datetime.date(2019,9,11) and PAR_date >= datetime.date(2019,9,9):
+    elif PAR_date <= datetime.date(2019, 9, 11) and PAR_date >= datetime.date(
+        2019, 9, 9
+    ):
         loading_var = {
             "high": ((9.5 / 250) * 5) / WE_SA,
             "normal": ((5 / 250) * 5) / WE_SA,
@@ -80,7 +82,7 @@ def loading_ref(PAR_date):
             "half": 0.5 * (5 / 250) * 5 / WE_SA,
             "loading-ref-unknown": (5 / 500) * 9 / WE_SA,
         }
-    elif PAR_date == datetime.date(2019,9,12):
+    elif PAR_date == datetime.date(2019, 9, 12):
         loading_var = {
             "high": ((9.5 / 250) * 5) / WE_SA,
             "normal": ((5 / 250) * 5) / WE_SA,
@@ -93,6 +95,7 @@ def loading_ref(PAR_date):
         loading_var = default_loading_var
     return loading_var
 
+
 @staticmethod
 def guess_RHE_from_Electrolyte(Elec):
     if "KOH" in Elec:
@@ -104,6 +107,7 @@ def guess_RHE_from_Electrolyte(Elec):
     else:
         RHE_OCP = 0
     return RHE_OCP
+
 
 @staticmethod
 def EC_Exp_Cols():
