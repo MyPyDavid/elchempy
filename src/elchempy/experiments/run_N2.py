@@ -9,7 +9,7 @@ import pandas as pd
 
 import elchempy
 
-from elchempy.experiments.dataloader.fetcher import ElchemData
+from elchempy.experiments.dataloader.fetcher import ElChemData
 from elchempy.experiments.N2.analyses import N2_analysis
 
 
@@ -46,6 +46,7 @@ class Analyze:  # TODO implement this class or move to BaseRunner class
 
     def run_serial(self):
         pass
+
     def multi_par_fit(self):
         pass
 
@@ -53,5 +54,5 @@ class Analyze:  # TODO implement this class or move to BaseRunner class
 
         _results = []
         for ecdata in datacollection:
-            ecdata= N2_analysis(ecdata)
+            ecdata = N2_analysis(ecdata)
             _results.append(ecdata)

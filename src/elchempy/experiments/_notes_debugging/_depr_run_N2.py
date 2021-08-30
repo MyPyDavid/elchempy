@@ -142,8 +142,6 @@ def load_all_N2_CVs(N2act_ovv):
 #    EIS_ovv_destfiles = pd.DataFrame(dest_files).set_index('index')
 
 
-
-
 def N2_act(ovv_exp_grp, **N2_kwargs):
     ###### === Analyze the N2 experiments ==== #######
     """Filter out relevant N2 scans from All_ovv data and calculate Capacity values"""

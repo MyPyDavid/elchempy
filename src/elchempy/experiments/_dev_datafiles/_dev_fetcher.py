@@ -5,8 +5,8 @@ Created on Thu Jul 15 16:12:27 2021
 """
 from pathlib import Path
 
-from elchempy.experiments.dataloader.reader import DataReader
-from elchempy.experiments.dataloader.fetcher import ElChemData
+from elchempy.experiments.dataloaders.reader import DataReader
+from elchempy.experiments.dataloaders.fetcher import ElChemData
 from elchempy.config import LOCAL_FILES
 
 
@@ -15,7 +15,7 @@ __all__ = ["_dev_get_files", "_dev_test_read", "_test_read"]
 
 def get_files(name="", files=LOCAL_FILES):
 
-    _files = list([i for i in files if name in i])
+    _files = list([i for i in files if name in str(i)])
     if not _files:
         print("Warning, no files with name {name} found in:\n{datadir}")
     return _files

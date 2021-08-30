@@ -37,6 +37,65 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+#%% notes from analyses
+
+
+def _old_N2_analysis(ecdata: ElChemData):
+    """
+    Performs the steps in the N2 analysis and add the
+    results to the ElchemData instance.
+
+    Parameters
+    ----------
+    ecdata : ElchemData
+        contains the raw data.
+
+    Returns
+    -------
+    ecdata : ElchemData
+        contains the results in an added method as attribute "N2".
+    """
+    # ElChemData
+    # FIXME Select only CV types from Data segment
+    # Select the data for N2 Cyclic Voltammograms
+    N2_CVs = ecdata.data.loc[ecdata.data.ActionId == 38]
+
+    N2_CVs = N2_CVs.dropna(subset=["scanrate"]).loc[N2_CVs.scanrate_calc != 0]
+
+    Cdl_pars, Cdl_data = pd.DataFrame(), pd.DataFrame()
+    # scanrates = N2_CVs.scanrate.unique()
+    if N2_CVs.scanrate.nunique() > 2:
+        # if multiple scanrates are present than calculations can start
+        Cdl_pars, Cdl_data = CDL(N2_CVs, EvRHE=EvRHE)
+
+    # Check if possible background (BG) scan is in the data
+    BG_present = False
+    N2_BG = pd.DataFrame()
+    if N2_CVs.scanrate.min() < 0.015:
+        # check presence of slow scanrates in data
+        BG_present = True
+    if BG_present:
+        N2_BG = get_N2_background_data()
+
+    N2_ecdata = N2_method(N2_CVs, Cdl_pars, Cdl_data, N2_BG)
+
+    ecdata.add_analysis_method(N2_ecdata)
+
+    return ecdata
+
+
+
+
+#%%
+
+
+
+
+
+
+
+
+
 
 def N2_scans(fit_run_arg, **N2_kwargs):
     N2_ovv_file = fit_run_arg.file_ovv

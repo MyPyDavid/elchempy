@@ -37,8 +37,11 @@ def _dev():
     for fname in LOCAL_FILES:
         sid = ElchemPathParser(fname)
         ecpps.append(sid)
-    aa = pd.concat([pd.DataFrame(i.EC_info_entry).T for i in ecpps])
+    aa = pd.concat(
+        [pd.DataFrame(i.EC_info_entry, index=[0]).T for i in ecpps], ignore_index=True
+    )
     bb = pd.concat([pd.DataFrame(i.EC_info_undetermined).T for i in ecpps])
+    cc = pd.concat([pd.DataFrame(i.INDEX_entry, index=[0]) for i in ecpps])
     return aa, ecpps
 
 
@@ -86,6 +89,9 @@ class ElchemPathParser(Path):
             **{"PAR_file": str(self)},
             **{k: val["value"] for k, val in self.EC_info.items()},
         }
+        if self.fpp.FP_info.get("PAR_file") == str(self):
+
+            self.INDEX_entry = {str(self): {**self.EC_info_entry, **self.fpp.FP_info}}
 
     @staticmethod
     def call_tokenizer_on_part(name, date_from_parent=None):
@@ -366,7 +372,7 @@ def tokenize_name_from_patterns(name, patterns=None, token_name="", **kwargs):
     for n, res in enumerate([i for i in pattern_res if i[-1]]):
         # name = replace_and_strip(name, res[-1], stripchars)
         info_res = {**info_res, **{f"{token_name}_{n}": res[-1]}}
-    logger.warning(
+    logger.debug(
         f"Info found for patterns{patterns} on {name}, {token_name}, {info_res}"
     )
     return info_res
@@ -412,12 +418,12 @@ def replace_and_strip(
 
     if not isinstance(value, str):
         return name.strip(stripchars)
-    logger.error(f"replace and strip: {name} with {value}")
+    logger.debug(f"replace and strip: {name} with {value}")
     if value in name:
         name = name.replace(value, replace_with)
         if separator:
             name = separator.join(list(filter(bool, name.split(separator))))
-
+    logger.debug(f"replace and strip new name: {name}")
     return name.strip(stripchars)
 
 
@@ -707,7 +713,7 @@ def match_SampleID(
             sampleID = "_".join([sampleID, *extra_part_matches])
 
     if message:
-        print('SampleID: "%s" used for %s' % (sampleID, file))
+        logger.warning('SampleID: "%s" used for %s' % (sampleID, file))
     return {"SampleID": str(sampleID.upper())}
 
 
@@ -942,7 +948,7 @@ def determine_date_from_filename(
 @tokenizer_decorator
 def determine_ink_loading_from_filename(filename, reference_date=None) -> Dict:
     """guesses the ink loading from name"""
-    print("ref date in ", reference_date)
+    # print("ref date in ", reference_date)
     # if not reference_date:
     # reference_date = kwargs.get('date_dt', None)
 

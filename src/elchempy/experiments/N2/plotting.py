@@ -12,20 +12,21 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def N2_plot_Cdl_scans_scanrate(Cdl_scans, _savepath):
-    EvRHE = "E_AppV_RHE"
+def N2_plot_raw_scans_scanrate(raw_data, EvRHE="E_vs_RHE", savepath=None):
     fig, ax = plt.subplots(figsize=(8, 8))
 
-    for sr, sgr in Cdl_scans.groupby("ScanRate_mVs"):
+    for sr, sgr in raw_data.groupby("scanrate"):
         _seg = int(sgr["Segment #"].unique()[0])
-        ax.plot(sgr[EvRHE], sgr["jmAcm-2"], label=f"{sr} mV, seg {_seg}")
+        ax.plot(sgr[EvRHE], sgr["j_mA_cm2"], label=f"{sr} mV, seg {_seg}")
     #                ax.legend(True)
-    fig.suptitle(f"{Path(Cdl_scans.PAR_file.unique()[0]).name}")
+    # fig.suptitle(f"{Path(Cdl_scans.PAR_file.unique()[0]).name}")
     ax.legend()
     ax.set_ylabel("$j \//\/mA/cm^{2}$")
     ax.set_xlabel("$E \//\/V_{RHE}$")
-    plt.savefig(_savepath, dpi=100, bbox_inches="tight")
-    plt.close()
+    if savepath:
+        plt.savefig(_savepath, dpi=100, bbox_inches="tight")
+        plt.close()
+        return
 
 
 def N2_plot_Cdl_sweeptype_scatter(

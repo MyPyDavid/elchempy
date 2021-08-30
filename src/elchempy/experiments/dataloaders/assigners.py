@@ -9,35 +9,40 @@ Created on Sat Aug 14 13:27:30 2021
 
 """
 
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Set
 
 import pandas as pd
 import numpy as np
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 class AssignerError(Exception):
     pass
 
+
 class AssignECDataColumns:
 
-    __slots__ = ['data']
+    __slots__ = ["data"]
 
     def __init__(self, data):
         if data:
             if isinstance(data, pd.DataFrame):
                 self.data = data
-                self.assign_all()
+                self.assign_all_EC_relevant_columns()
             else:
-                raise TypeError('argument data is not of type DataFrame')
+                raise TypeError("argument data is not of type DataFrame")
 
 
-def assign_all(data : pd.DataFrame,
-               actions=pd.DataFrame(),
-               raw_current_key: str='I(A)',
-               **kwargs) -> pd.DataFrame:
-    '''
+def assign_all_EC_relevant_columns(
+    data: pd.DataFrame,
+    actions: pd.DataFrame = pd.DataFrame(),
+    raw_current_key: str = "I(A)",
+    **kwargs,
+) -> Tuple[pd.DataFrame, Set]:
+    """
     Checks first if input data is a DataFrame, assigns columns, then checks if actions DataFrame is also there
 
     Parameters
@@ -61,17 +66,21 @@ def assign_all(data : pd.DataFrame,
     data : TYPE
         DESCRIPTION.
 
-    '''
-    NEW_COLUMNS = ['E_AppV_RHE', 'j A/cm2', 'jmAcm-2',
-                    'scanrate_calc', 'scanrate_prog_calc',
-                    'scanrate',
-                    'SweepType'
-                    ]
+    """
+    NEW_COLUMNS = [
+        "E_AppV_RHE",
+        "j A/cm2",
+        "jmAcm-2",
+        "scanrate_calc",
+        "scanrate_prog_calc",
+        "scanrate",
+        "SweepType",
+    ]
 
-    if not isinstance(data, pd.DataFrame) :
-        raise AssignerError('argument data or actions is not of type DataFrame')
+    if not isinstance(data, pd.DataFrame):
+        raise AssignerError("argument data is not of type DataFrame")
     if not isinstance(actions, pd.DataFrame):
-        raise AssignerError('argument data or actions is not of type DataFrame')
+        raise AssignerError("argument actions is not of type DataFrame")
 
     if data.empty:
         return data
@@ -80,12 +89,16 @@ def assign_all(data : pd.DataFrame,
 
     try:
         # j_mA  = get_current_density(data[raw_current_key].to_numpy(), **kwargs)
-        j_mA, j_mA_info = get_current_density(data[raw_current_key].to_numpy(),convert_to_mA=True, **kwargs)
-        j_A, j_A_info = get_current_density(data[raw_current_key].to_numpy(),convert_to_mA=False, **kwargs)
+        j_mA, j_mA_info = get_current_density(
+            data[raw_current_key].to_numpy(), convert_to_mA=True, **kwargs
+        )
+        j_A, j_A_info = get_current_density(
+            data[raw_current_key].to_numpy(), convert_to_mA=False, **kwargs
+        )
         data = data.assign(**{**j_A, **j_mA})
 
         data = assign_scanrate_calc(data)
-        data = assign_sweep_type(data, scanrate_key = 'scanrate_calc')
+        data = assign_sweep_type(data, scanrate_key="scanrate_calc")
         data = add_scanrate_per_segment(data)
 
         data = assign_E_vs_RE(data, **kwargs)
@@ -98,29 +111,33 @@ def assign_all(data : pd.DataFrame,
         return data
 
     try:
-        data = assign_action_number_to_data_from_actions_table(data , actions, **kwargs)
+        data = assign_action_number_to_data_from_actions_table(data, actions, **kwargs)
         data = assign_action_type_from_reference_table(data, **kwargs)
-    except Exception as exp:
-        logger.warning("Could not assign all electrochemical columns to data from actions.\n{exc}")
+    except Exception as exc:
+        logger.warning(
+            f"Could not assign all electrochemical columns to data from actions.\n{exc}"
+        )
+        raise exc from exc
 
     _columns_end = set(data.columns)
     diff_cols = _columns_end - _columns_init
     # print(f'Diff columns: {", ".join(map(str, diff_cols))} ')
     return data, diff_cols
 
+    # else:
+    #     raise TypeError('argument data is not of type DataFrame')
+    # if not data.empty:
+    #         print(f"{self.__class__.__qualname__} error {e} for\n {}")
 
-        #     else:
-        #         raise TypeError('argument data is not of type DataFrame')
 
-        # if not data.empty:
-        #         print(f"{self.__class__.__qualname__} error {e} for\n {}")
-
-def get_current_density(raw_current_I: np.array,
-                           unit_I_raw: ['A', 'mA'] = 'A',
-                           unit_SA: ['cm2', 'm2'] = 'cm2',
-                           convert_to_mA: bool = False,
-                           geometric_SA: float = 20) -> Tuple[Dict, Dict]:
-    '''
+def get_current_density(
+    raw_current_I: np.array,
+    unit_I_raw: ["A", "mA"] = "A",
+    unit_SA: ["cm2", "m2"] = "cm2",
+    convert_to_mA: bool = False,
+    geometric_SA: float = 20,
+) -> Tuple[Dict, Dict]:
+    """
     Normalized the current for the surface area of the electrode.
     Optionially, units can set for conversions.
 
@@ -142,46 +159,50 @@ def get_current_density(raw_current_I: np.array,
     current_density_columns : dict
         {"j_unit" : np.array}
 
-    '''
+    """
 
-
-    if unit_SA == 'cm2' and geometric_SA > 100:
-        logger.warning('Is this the Electrode Surface Area in {unit_SA}? {geometric_SA_cm2}.\nThis value seems too large..')
+    if unit_SA == "cm2" and geometric_SA > 100:
+        logger.warning(
+            "Is this the Electrode Surface Area in {unit_SA}? {geometric_SA_cm2}.\nThis value seems too large.."
+        )
 
     # unit_j: ['Acm-2', 'mAcm-2'] = 'mAcm-2',
-    if convert_to_mA and 'm' in unit_I_raw:
-        conversion_mA, add_M  = 1, False
-    elif convert_to_mA and not 'm' in unit_I_raw:
-        conversion_mA, add_M = 1E3, True
-    elif not convert_to_mA and 'm' in unit_I_raw:
-        conversion_mA, add_M = 1E-3, False
-    elif not convert_to_mA and not 'm' in unit_I_raw:
+    if convert_to_mA and "m" in unit_I_raw:
+        conversion_mA, add_M = 1, False
+    elif convert_to_mA and not "m" in unit_I_raw:
+        conversion_mA, add_M = 1e3, True
+    elif not convert_to_mA and "m" in unit_I_raw:
+        conversion_mA, add_M = 1e-3, False
+    elif not convert_to_mA and not "m" in unit_I_raw:
         conversion_mA, add_M = 1, False
 
     if add_M:
-        current_density_key = f'j_m{unit_I_raw}_{unit_SA}'
+        current_density_key = f"j_m{unit_I_raw}_{unit_SA}"
     else:
-        current_density_key = f'j_{unit_I_raw}_{unit_SA}'
+        current_density_key = f"j_{unit_I_raw}_{unit_SA}"
 
     current_density_column = {
-        current_density_key : conversion_mA * raw_current_I / geometric_SA
-        }
+        current_density_key: conversion_mA * raw_current_I / geometric_SA
+    }
 
-    info = {'unit_I_raw' :unit_I_raw,
-            # 'unit_j' :unit_j,
-            'unit_SA' : unit_SA,
-            'geometric_SA' : geometric_SA,
-            'current_density_key' : current_density_key,
-            'conversion_mA' : conversion_mA,
-            'convert_to_mA' : convert_to_mA}
+    info = {
+        "unit_I_raw": unit_I_raw,
+        # 'unit_j' :unit_j,
+        "unit_SA": unit_SA,
+        "geometric_SA": geometric_SA,
+        "current_density_key": current_density_key,
+        "conversion_mA": conversion_mA,
+        "convert_to_mA": convert_to_mA,
+    }
     return current_density_column, info
 
 
-
-def assign_E_vs_RE(data: pd.DataFrame,
-                   RE_potential_V: float = 0,
-                   RE_name: ['RHE','AgAgCl', str]= 'RHE'):
-    '''
+def assign_E_vs_RE(
+    data: pd.DataFrame,
+    RE_potential_V: float = 0,
+    RE_name: ["RHE", "AgAgCl", str] = "RHE",
+):
+    """
     EappV_RHE: the applied potential versus the RHE potential.
         requires: RHE OCP potential value in Volt or mV
         notes: RHE_OCP potential value is read/guesses from the filename or taken from
@@ -199,12 +220,12 @@ def assign_E_vs_RE(data: pd.DataFrame,
     Returns
     -------
     data : pd.DataFrame
-    '''
+    """
 
     E_RHE_columns = {
-        f'E_vs_{RE_name}': data['E(V)'] + RE_potential_V,
-        f'E_programmed_modulation_vs_{RE_name}': data['E Applied(V)'] + RE_potential_V
-        }
+        f"E_vs_{RE_name}": data["E(V)"] + RE_potential_V,
+        f"E_programmed_modulation_vs_{RE_name}": data["E Applied(V)"] + RE_potential_V,
+    }
 
     data = data.assign(**E_RHE_columns)
 
@@ -215,8 +236,7 @@ def unit_ratio(A, B):
     pass
 
 
-
-def assign_scanrate_calc(data: pd.DataFrame ):
+def assign_scanrate_calc(data: pd.DataFrame):
     """
     Takes a row from the EC_index and reads in the the data from the PAR_file segments
     returns a namedtuple: r.data and r.actions
@@ -262,76 +282,86 @@ def assign_scanrate_calc(data: pd.DataFrame ):
     #     }
 
     scanrate_calc_columns = {
-        'scanrate_calc': np.round(
-            (data['E(V)'].diff() / data['Elapsed Time(s)'].diff()), 3
+        "scanrate_calc": np.round(
+            (data["E(V)"].diff() / data["Elapsed Time(s)"].diff()), 3
         ),
-        'scanrate_prog_calc': np.round(
-            (data['E Applied(V)'].diff() / data['Elapsed Time(s)'].diff()), 3
+        "scanrate_prog_calc": np.round(
+            (data["E Applied(V)"].diff() / data["Elapsed Time(s)"].diff()), 3
         ),
     }
 
     # TODO split in separate functions !!!
     # EC_important_columns = {
-                            # **current_density_columns,
-                            # **scanrate_calc_columns}
+    # **current_density_columns,
+    # **scanrate_calc_columns}
     data = data.assign(**scanrate_calc_columns)
     # data.scanrate_calc = data.scanrate_calc.fillna(method="backfill")
     # data.scanrate_prog_calc= data.scanrate_prog_calc.fillna(method="backfill")
-    _fillna_cols = ['scanrate_calc', 'scanrate_prog_calc']
-    data[_fillna_cols] = data[_fillna_cols].fillna(method='backfill')
+    _fillna_cols = ["scanrate_calc", "scanrate_prog_calc"]
+    data[_fillna_cols] = data[_fillna_cols].fillna(method="backfill")
     return data
 
 
-def add_scanrate_per_segment(data,
-                             segment_key: str = 'Segment #',
-                             sr_round: int = 3,
-                             scanrate_key: str = 'scanrate_calc'):
+def add_scanrate_per_segment(
+    data,
+    segment_key: str = "Segment #",
+    sr_round: int = 3,
+    scanrate_key: str = "scanrate_calc",
+):
     # add simple scanrate per segment
     # segkey = 'Segment #'
     # sr_round = 3
     try:
         # check and add values per segment
         segment_sr_mapping_lst = []
-        for n,gr in data.groupby(segment_key):
+        for n, gr in data.groupby(segment_key):
             sr_calc_mean = 0
             if len(gr) > 3:
                 # sr_prog_mean = np.round(np.abs(gr.iloc[1:-1].scanrate_prog_calc).mean(), sr_round)
-                sr_calc_mean = np.round(np.abs(gr.iloc[1:-1][scanrate_key]).mean(), sr_round)
+                sr_calc_mean = np.round(
+                    np.abs(gr.iloc[1:-1][scanrate_key]).mean(), sr_round
+                )
                 # sr_value = sr_prog_mean if np.isclose(sr_prog_mean,sr_calc_mean,atol=0.02) else sr_calc_mean
                 # gr.ActionId.unique()
                 segment_sr_mapping_lst.append((n, sr_calc_mean))
-        data['scanrate'] = data[segment_key].map(dict(segment_sr_mapping_lst))
+        data["scanrate"] = data[segment_key].map(dict(segment_sr_mapping_lst))
     except Exception as exc:
-        logger.warning(f'error in adding simple sr values per segment.\n{exc}')
+        logger.warning(f"error in adding simple sr values per segment.\n{exc}")
     return data
 
-def assign_sweep_type(data, scanrate_key = 'scanrate_calc'):
-    '''
+
+def assign_sweep_type(data, scanrate_key="scanrate_calc"):
+    """
     SweepType: the direction of the scan, ['anodic', 'cathodic', 'chrono', None]
         requires: scanrate with positive and negative numbers
-    '''
+    """
 
     sr_arr = data[scanrate_key]
 
-    sweeptype = {'SweepType': np.where(
-        sr_arr > 0,
-        'anodic',
-        np.where(
-            sr_arr < 0,
-            "cathodic",
-            np.where(sr_arr == 0, 'chrono', None),
-        ),
-    )}
+    sweeptype = {
+        "SweepType": np.where(
+            sr_arr > 0,
+            "anodic",
+            np.where(
+                sr_arr < 0,
+                "cathodic",
+                np.where(sr_arr == 0, "chrono", None),
+            ),
+        )
+    }
 
-    data = data.assign(**sweeptype )
+    data = data.assign(**sweeptype)
     data.SweepType = data.SweepType.fillna(method="backfill")
     return data
 
-def assign_action_type_from_reference_table(data : pd.DataFrame,
-                                            type_action_key = 'action_type',
-                                            actionID_key: str = 'ActionID',
-                                            ActionId_to_Type_Reference: dict = {}):
-    '''
+
+def assign_action_type_from_reference_table(
+    data: pd.DataFrame,
+    type_action_key="action_type",
+    actionID_key: str = "ActionID",
+    ActionId_to_Type_Reference: dict = {},
+):
+    """
     Goal:
         assign a type of action to each segment number
         in the data table,
@@ -360,18 +390,19 @@ def assign_action_type_from_reference_table(data : pd.DataFrame,
     -------
     data : pd.DataFrame
         contains the data table + new "action_type" column
-    '''
+    """
 
     # SRunq = segment1["ScanRate_calc"].round(3).unique()
-    data[type_action_key] = data[actionID_key].map({val : key for key,val in ActionId_to_Type_Reference.items()})
+    data[type_action_key] = data[actionID_key].map(
+        {val: key for key, val in ActionId_to_Type_Reference.items()}
+    )
     return data
 
+
 def assign_action_number_to_data_from_actions_table(
-                                                    data: pd.DataFrame,
-                                                    actions: pd.DataFrame,
-                                                    actionID_key: str= 'ActionID'
-                                                                            ):
-    '''
+    data: pd.DataFrame, actions: pd.DataFrame, actionID_key: str = "ActionID"
+):
+    """
     Parameters
     ----------
     actions : pd.DataFrame
@@ -384,24 +415,26 @@ def assign_action_number_to_data_from_actions_table(
     -------
     data : pd.DataFrame
         contains the data table + new "action_numer" column
-    '''
+    """
 
-    data_segs_sum = len(data['Segment #'].unique())
+    data_segs_sum = len(data["Segment #"].unique())
     action_segs_sum = actions.Segments.sum()
 
     matching_segments = data_segs_sum == action_segs_sum
-    data_seg_grp = data.groupby('Segment #')
+    data_seg_grp = data.groupby("Segment #")
 
     _segcounter = 0
     action_seglist = []
     for actname, actrow in actions.iterrows():
         if actrow.Segments > 0 and _segcounter <= data_segs_sum:
             seglist = list(range(_segcounter, _segcounter + actrow.Segments))
-            np_seglist = np.linspace(_segcounter, _segcounter + actrow.Segments, actrow.Segments)
+            np_seglist = np.linspace(
+                _segcounter, _segcounter + actrow.Segments, actrow.Segments
+            )
             _segcounter += actrow.Segments
-            action_seglist.append((actname, actrow.Name , seglist,_segcounter))
-                                   # , [len(data_seg_grp.get_group(segn)) for segn in seglist]))
+            action_seglist.append((actname, actrow.Name, seglist, _segcounter))
+            # , [len(data_seg_grp.get_group(segn)) for segn in seglist]))
     if action_seglist:
-        action_seg_dict = dict([(i,a[0]) for a in action_seglist for i in a[2]])
-        data[actionID_key] = data['Segment #'].map(action_seg_dict)
+        action_seg_dict = dict([(i, a[0]) for a in action_seglist for i in a[2]])
+        data[actionID_key] = data["Segment #"].map(action_seg_dict)
     return data

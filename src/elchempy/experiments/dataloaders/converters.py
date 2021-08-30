@@ -4,21 +4,23 @@ Created on Thu Jul 15 11:15:53 2021
 @author: DW
 """
 
-def get_current_density(I, surface_area = 1):
+
+def get_current_density(I, surface_area=1):
 
     j = I / surface_area
 
     return j
 
-def get_potential_vs_RE(E, reference_potential_V = 0.0):
+
+def get_potential_vs_RE(E, reference_potential_V=0.0):
 
     E_v_RE = E + reference_potential_V
 
     return E_v_RE
 
 
-def get_RPM_from_DAC_V(DAC_V, cell_number = 0):
-    '''
+def get_RPM_from_DAC_V(DAC_V, cell_number=0):
+    """
     Takes a potential value (DAC) in Volt and converts this value
     into the rpm speed of the rotation.
     Guesses from typical setting values.
@@ -41,7 +43,7 @@ def get_RPM_from_DAC_V(DAC_V, cell_number = 0):
     -------
     RPM : int
         rpm value
-    '''
+    """
 
     conv1 = 1 / 3635
     conv2 = 1 / 1000
@@ -57,7 +59,8 @@ def get_RPM_from_DAC_V(DAC_V, cell_number = 0):
     use_conv = 1
     rpm_list = [0, 200, 400, 900, 1500]
     v3l = [0, 0.055, 0.11, 0.2475, 0.245, 0.405, 0.410, 0.675]
-    pdx = [ 0.0,
+    pdx = [
+        0.0,
         0.2,
         0.4,
         0.9,
