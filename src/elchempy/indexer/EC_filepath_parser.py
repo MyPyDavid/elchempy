@@ -35,21 +35,22 @@ def _dev():
     fname = LOCAL_FILES[7]
     ecpps = []
     for fname in LOCAL_FILES:
-        sid = ElchemPathParser(fname)
+        sid = ElChemPathParser(fname)
         ecpps.append(sid)
     aa = pd.concat(
         [pd.DataFrame(i.EC_info_entry, index=[0]).T for i in ecpps], ignore_index=True
     )
     bb = pd.concat([pd.DataFrame(i.EC_info_undetermined).T for i in ecpps])
     cc = pd.concat([pd.DataFrame(i.INDEX_entry, index=[0]) for i in ecpps])
+
     return aa, ecpps
 
 
-class ElchemPathParserError(Exception):
-    """raises errors from ElchemPathParser"""
+class ElChemPathParserError(Exception):
+    """raises errors from ElChemPathParser"""
 
 
-class ElchemPathParser(Path):
+class ElChemPathParser(Path):
     """Find or Guess the SampleID that is assiociated with the filename"""
 
     _flavour = type(Path())._flavour
@@ -60,15 +61,15 @@ class ElchemPathParser(Path):
         self.fpp = FilePathParser(self)
         # super().__init__(*args, **kwargs)
 
-        parent_info = ElchemPathParser.call_tokenizer_on_part(self.parent.name)
+        parent_info = ElChemPathParser.call_tokenizer_on_part(self.parent.name)
         if parent_info.get("date_dt", None):
             date_from_parent = parent_info.get("date_dt", None)
-        stem_info = ElchemPathParser.call_tokenizer_on_part(
+        stem_info = ElChemPathParser.call_tokenizer_on_part(
             self.stem, date_from_parent=date_from_parent
         )
 
         self.EC_info_parts = {"parent": parent_info, "stem": stem_info}
-        self.EC_info_merged = ElchemPathParser.merge_info_parts(self.EC_info_parts)
+        self.EC_info_merged = ElChemPathParser.merge_info_parts(self.EC_info_parts)
 
         self.EC_info = {}
         if self.EC_info_merged:
@@ -91,14 +92,16 @@ class ElchemPathParser(Path):
         }
         if self.fpp.FP_info.get("PAR_file") == str(self):
 
-            self.INDEX_entry = {str(self): {**self.EC_info_entry, **self.fpp.FP_info}}
+            self.EC_INDEX_entry = {
+                str(self): {**self.EC_info_entry, **self.fpp.FP_info}
+            }
 
     @staticmethod
     def call_tokenizer_on_part(name, date_from_parent=None):
         try:
             info = tokenize_name_into_remainder(name, date_from_parent=date_from_parent)
-        except ElchemPathParserError as ex:
-            raise ElchemPathParserError(
+        except ElChemPathParserError as ex:
+            raise ElChemPathParserError(
                 f"Error in tokenizer of name: {str(name)}"
             ) from ex
             info = {"tokenize_error": ex, "tokenize_name": name}
@@ -183,9 +186,6 @@ def get_most_common_split(name, name_separators=["_", "-"]):
     else:
         split, sep = [], None
     return split, sepcounter, sep
-
-
-# fname ='OCP_RHE_AgAgCl4_POST-EXP'
 
 
 def tokenize_name_into_remainder(
@@ -337,10 +337,10 @@ def tokenizer_decorator(func, **kwargs):
             else:
                 token = func(name)
         except TypeError as ex:
-            raise ElchemPathParserError(ex) from ex
+            raise ElChemPathParserError(ex) from ex
             return name, info
         except Exception as ex:
-            raise ElchemPathParserError(ex) from ex
+            raise ElChemPathParserError(ex) from ex
             return name, info
         if not token:
             # logger.warning(f'Wrapper no token found for {func}, {name}')

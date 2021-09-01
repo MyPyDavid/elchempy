@@ -46,17 +46,23 @@ def _dev():
 
 
 class ExperimentManager:
-    def __init__(self, files, multi_run=False):
+    """The ExperimentManager takes in a request and files to start running the analyses of each experiment"""
+
+    def __init__(self, files, multi_run=False, pre_load_data=False):
         self._files = files
         self._multi_run = multi_run
+        self._pre_load_data = pre_load_data
 
-        self.ecpfls = run_func_on_files(
-            ElchemPathParser, self._files, multi_run=self._multi_run
-        )
-
+        self.ecpfls = self.run(ElchemPathParser)
         # self.ecdata = run_func_on_files(ElChemData, self._files, multi_run= self._multi_run)
 
-        self.N2data = run_func_on_files(N2_Data, self._files, multi_run=self._multi_run)
+        self.N2data = self.run(N2_Data)
+        # run_func_on_files(N2_Data, self._files, multi_run=self._multi_run)
+
+    def run(self, func):
+        """shortcut for run_func_on_files command"""
+        run_result = run_func_on_files(func, self._files, multi_run=self._multi_run)
+        return run_result
 
     def call_exp_file_interpreter(self):
 
