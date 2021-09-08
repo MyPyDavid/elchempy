@@ -65,7 +65,9 @@ class ExperimentManager:
 
     def run(self, func, **kwargs):
         """shortcut for run_func_on_files command"""
-        run_result = run_func_on_files(func, self._files, multi_run=self._multi_run, **kwargs)
+        run_result = run_func_on_files(
+            func, self._files, multi_run=self._multi_run, **kwargs
+        )
         return run_result
 
     def call_exp_file_interpreter(self):

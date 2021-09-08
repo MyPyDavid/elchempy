@@ -27,6 +27,7 @@ from elchempy.indexer.helpers import (
 )
 
 from elchempy.experiments.dataloaders.files_func_collector import run_func_on_files
+
 # from elchempy.experiments.dataloaders.fetcher import ElChemData
 
 from elchempy.indexer.EC_path_parser import ElChemPathParser
@@ -42,11 +43,11 @@ import pandas as pd
 
 #%%
 class ElChemPathParserCollection:
-    '''
+    """
     Collects the parsers instances for a list of files.
     Can include metadata from file instrospection or only from parsing the filename
 
-    '''
+    """
 
     def __init__(self, files, include_metadata=False, multi_run=False):
         self._files = files
@@ -54,13 +55,17 @@ class ElChemPathParserCollection:
         self._include_metadata = include_metadata
 
         self.ecpps = run_func_on_files(
-             ElChemPathParser, self._files, multi_run=self._multi_run)
+            ElChemPathParser, self._files, multi_run=self._multi_run
+        )
 
         self.ecds = None
         if self._include_metadata:
             self.ecds = run_func_on_files(
-                ElChemData, self._files, multi_run=self._multi_run, metadata_only=self._include_metadata
-        )
+                ElChemData,
+                self._files,
+                multi_run=self._multi_run,
+                metadata_only=self._include_metadata,
+            )
 
         self.index = self.merge_and_make_index_from_collections()
         # self.index = pd.concat(
@@ -78,19 +83,26 @@ class ElChemPathParserCollection:
                 "relative_folders": self.rel_folders,
             }
         )
+
     def merge_and_make_index_from_collections(self):
         entries = []
-        for k,val in self.ecpps.items():
+        for k, val in self.ecpps.items():
             ecpp_entry = pd.DataFrame(val.EC_INDEX_entry).T
-            rename_columns = {i: f'exp_{i}' for i in ecpp_entry.columns if not (i.startswith('PAR') or i.startswith('File'))}
+            rename_columns = {
+                i: f"exp_{i}"
+                for i in ecpp_entry.columns
+                if not (i.startswith("PAR") or i.startswith("File"))
+            }
             ecpp_entry = ecpp_entry.rename(columns=rename_columns)
             if self.ecds:
                 ecd = self.ecds.get(k)
-                actions_names = ', '.join(ecd.actions.Name.unique())
-                ecpp_entry = ecpp_entry.assign(**{'actions_names' : actions_names})
+                actions_names = ", ".join(ecd.actions.Name.unique())
+                ecpp_entry = ecpp_entry.assign(**{"actions_names": actions_names})
                 # val.EC_INDEX_entry.get(k).update()
                 metadata = ecd.DR.metadata
-                ecpp_entry = pd.merge(ecpp_entry, metadata, left_index=True, right_index=True)
+                ecpp_entry = pd.merge(
+                    ecpp_entry, metadata, left_index=True, right_index=True
+                )
             entries.append(ecpp_entry)
         if entries:
             index = pd.concat(entries, ignore_index=False)
@@ -98,19 +110,20 @@ class ElChemPathParserCollection:
             index = pd.DataFrame()
         return index
 
-
-
     def add_methods(self):
         """for persistence and loading of this 'collection' in a database of pkl file eg"""
+
     def store_index(self):
         pass
+
     def load_index(self):
         pass
-
 
 
 #%%
 
 if __name__ == "__main__":
-    ecppcol = ElChemPathParserCollection(LOCAL_FILES, multi_run=True, include_metadata=True)
+    ecppcol = ElChemPathParserCollection(
+        LOCAL_FILES, multi_run=True, include_metadata=True
+    )
     self = ecppcol

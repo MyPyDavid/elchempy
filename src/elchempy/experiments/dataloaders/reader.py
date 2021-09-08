@@ -11,7 +11,11 @@ logger = logging.getLogger(__name__)
 
 import elchempy
 from elchempy.experiments.dataloaders.parsers import read_PAR_file
-from elchempy.experiments.dataloaders.parser_helpers import cast_parser_to_dataframe, cast_metadata_to_flat_dict, get_starttime_from_parser
+from elchempy.experiments.dataloaders.parser_helpers import (
+    cast_parser_to_dataframe,
+    cast_metadata_to_flat_dict,
+    get_starttime_from_parser,
+)
 
 
 def _drop_cols_from_data_segment():
@@ -20,7 +24,9 @@ def _drop_cols_from_data_segment():
     _drop_cols = ["E2 Imag", "E2 Real", "E2 Status", "E2(V)", "Z2 Imag", "Z2 Real"]
     return _drop_cols
 
+
 # read_par_file(filepath)
+
 
 class DataReader:
     """
@@ -57,16 +63,16 @@ class DataReader:
 
         if filesize > max_bytesize or filepath.suffix not in self.supported_filetypes:
             _warning = f"File too large {filesize} > {max_bytesize}"
-            logger.warn(_warning )
+            logger.warn(_warning)
             raise ValueError(_warning)
 
         self.filepath = filepath
         self._metadata_only = metadata_only
 
         self.parser = None
-        self.parser = self.read_file(self.filepath, metadata_only = self._metadata_only)
+        self.parser = self.read_file(self.filepath, metadata_only=self._metadata_only)
 
-        metadata  = pd.DataFrame()
+        metadata = pd.DataFrame()
         actions = pd.DataFrame()
         data = pd.DataFrame()
 
@@ -74,21 +80,21 @@ class DataReader:
         self.parser_dict = parser_dict
 
         # metadata, actions, data = _frames
-        self.actions = parser_dict['frames']['actions']
-        self.data = parser_dict['frames']['data']
+        self.actions = parser_dict["frames"]["actions"]
+        self.data = parser_dict["frames"]["data"]
 
-        flat_metadata = cast_metadata_to_flat_dict(parser_dict['dicts']['metadata'])
+        flat_metadata = cast_metadata_to_flat_dict(parser_dict["dicts"]["metadata"])
 
         start_time, _start_time_source = get_starttime_from_parser(self.parser)
         self.start_time, self._start_time_source = start_time, _start_time_source
-        flat_metadata.update({'meta_start_time' : start_time})
+        flat_metadata.update({"meta_start_time": start_time})
 
         self.metadata = pd.DataFrame(flat_metadata, index=[str(self.filepath)])
         # self.double_check_data(self.data, expected_values=self.expected_keys_values)
 
     def __len__(self):
         if self._metadata_only:
-            return len(self.metadata)+len(self.actions)
+            return len(self.metadata) + len(self.actions)
         else:
             return len(self.data)
 
@@ -98,7 +104,7 @@ class DataReader:
         else:
             return False if self.data.empty else True
 
-    def read_file(self, filepath, metadata_only = False):
+    def read_file(self, filepath, metadata_only=False):
         """
         Parameters
         ----------
@@ -119,7 +125,7 @@ class DataReader:
         suffix = filepath.suffix
 
         if ".par" in suffix:
-            parser = read_PAR_file(filepath, metadata_only = metadata_only)
+            parser = read_PAR_file(filepath, metadata_only=metadata_only)
             # this parser has dictionary attributes which need to be cast in to DataFrames
 
         elif ".other" in suffx:
@@ -131,6 +137,3 @@ class DataReader:
         _name = self.filepath.name
         _txt = f"actions = {len(self.actions)}, data = {len(self.data)}"
         return f"{self.__class__.__qualname__} on {_name}, {_txt}"
-
-
-

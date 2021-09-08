@@ -17,7 +17,7 @@ class ParserError(ValueError):
     """unable to parse this file"""
 
 
-def read_PAR_file(filepath: Path, break_if_line_contains='', metadata_only=False):
+def read_PAR_file(filepath: Path, break_if_line_contains="", metadata_only=False):
     """
     Special parser for Versatstudio ".par" files
 
@@ -28,7 +28,7 @@ def read_PAR_file(filepath: Path, break_if_line_contains='', metadata_only=False
     """
 
     if metadata_only:
-        break_if_line_contains = '<Segment1>'
+        break_if_line_contains = "<Segment1>"
 
     try:
         with open(filepath) as fp:
@@ -50,7 +50,10 @@ def read_PAR_file(filepath: Path, break_if_line_contains='', metadata_only=False
     VSP.feed(fp_read)
     VSP.close()
     # FIXME TODO monkey patching kwargs
-    _kwargs = {'break_if_line_contains' : break_if_line_contains, 'metadata_only' : metadata_only}
+    _kwargs = {
+        "break_if_line_contains": break_if_line_contains,
+        "metadata_only": metadata_only,
+    }
     VSP._kwargs = _kwargs
     # breakpoint()
     # metadata, actions, data = cast_parser_to_dataframe(VSP)
@@ -100,7 +103,13 @@ class VersaStudioParser(HTMLParser):
     # _meta_tags = ('application', 'instrument','experiment')
     _data_name = "segment"
     _action_name = "action"
-    _metadata_tags = ('application','instrument', 'mode:floating,', 'filter:normal', 'experiment')
+    _metadata_tags = (
+        "application",
+        "instrument",
+        "mode:floating,",
+        "filter:normal",
+        "experiment",
+    )
 
     _tags_found = []
 

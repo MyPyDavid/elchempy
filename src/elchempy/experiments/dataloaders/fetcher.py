@@ -39,6 +39,7 @@ def _dev():
     ecd = ElChemData(N2fls[1])
     self = ecd
 
+
 # @dataclass
 class ElChemData:
     """
@@ -50,15 +51,17 @@ class ElChemData:
     of electrochemimcal experiments.
     """
 
-    args_keys = ['_filepath']
-    kwargs_keys = ['_metadata_only', '_kwargs']
-    called_class_keys = ['DR']
-    data_keys = ['metadata', 'actions', 'data', 'start_time', 'methods' ]
-    new_data_keys = ['new_EC_columns']
+    args_keys = ["_filepath"]
+    kwargs_keys = ["_metadata_only", "_kwargs"]
+    called_class_keys = ["DR"]
+    data_keys = ["metadata", "actions", "data", "start_time", "methods"]
+    new_data_keys = ["new_EC_columns"]
 
     __slots__ = args_keys + kwargs_keys + called_class_keys + data_keys + new_data_keys
 
-    def __init__(self, filepath: Union[Path, str], metadata_only: bool = False, **kwargs):
+    def __init__(
+        self, filepath: Union[Path, str], metadata_only: bool = False, **kwargs
+    ):
         self._filepath = filepath
         self._metadata_only = metadata_only
         self._kwargs = kwargs
@@ -94,7 +97,7 @@ class ElChemData:
         self.methods = []
 
     @property
-    def filepath(self) ->Union[Path, str]:
+    def filepath(self) -> Union[Path, str]:
         return self._filepath
 
     @property
@@ -107,6 +110,7 @@ class ElChemData:
         setattr(self, methodname, results_from_method)
         self.methods.append(methodname)
         # else:
+
     def __bool__(self):
         return bool(self.DR)
 
@@ -120,7 +124,7 @@ class ElChemData:
         if not self._filepath:
             return f"{self.__class__.__qualname__}()"
         _name = Path(self._filepath).name
-        _txt = f'metadata={len(self.metadata)}, actions={len(self.actions)}, data={len(self.data)}'
+        _txt = f"metadata={len(self.metadata)}, actions={len(self.actions)}, data={len(self.data)}"
         _methods = f'methods={", ".join(map(str, self.methods))}'
         return f"{self.__class__.__qualname__}: {_name}, {_txt}"
         # return f"{self.__class__.__qualname__}('{str(self.filepath)}')"
@@ -129,4 +133,3 @@ class ElChemData:
         if not self._filepath:
             return f"{self.__class__.__qualname__}()"
         return str(Path(self.filepath))
-

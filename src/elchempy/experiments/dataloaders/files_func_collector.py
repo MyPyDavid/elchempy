@@ -23,7 +23,8 @@ import pandas as pd
 
 #%%
 
-def wrapper_func(*args ):
+
+def wrapper_func(*args):
     # print(f'args: {arg}\nkwargs: {kwargs}')
     # **kwargs
     func, file, kwargs = args
@@ -33,6 +34,7 @@ def wrapper_func(*args ):
     except Exception as exc:
         logger.info(f"Error in multiprocess wrapper {exc}")
         # result = None
+
 
 def run_func_on_files(func, files, multi_run=False, **kwargs) -> Dict:
     collection = []
@@ -45,7 +47,7 @@ def run_func_on_files(func, files, multi_run=False, **kwargs) -> Dict:
 
     collect_dict = {str(i): i for i in collection}
     if not collect_dict:
-        logger.warning(f'Collection len={len(collection)}, collect_dict is empty.')
+        logger.warning(f"Collection len={len(collection)}, collect_dict is empty.")
 
     try:
         # _test = str(ecpp_collection[0])
@@ -55,13 +57,16 @@ def run_func_on_files(func, files, multi_run=False, **kwargs) -> Dict:
     except Exception as ex:
         raise ex from ex
 
+
 def make_collection_multi(func: callable, files: Collection, **kwargs) -> List:
 
     collection = []
     with Pool(os.cpu_count() - 2) as pool:
         try:
             #                    results = pool.map(EC_classifier_multi_core.EC_PAR_file_check, self.par_files_run)
-            collection = pool.starmap(wrapper_func, zip(repeat(func), files, repeat(kwargs)))
+            collection = pool.starmap(
+                wrapper_func, zip(repeat(func), files, repeat(kwargs))
+            )
         except Exception as ex:
             #                    print('FileHelper module not found:',e)
             logger.error(f"make_collection_multi multiprocessing error: {ex}")
@@ -75,9 +80,7 @@ def make_collection_serial(func: callable, files: Collection, **kwargs) -> List:
     ecpp_collection = []
     for file in files:
         try:
-            logger.debug(
-                f"{__name__} calling {func} on\n{file}."
-            )
+            logger.debug(f"{__name__} calling {func} on\n{file}.")
             ecpp = func(file, **kwargs)
 
             ecpp_collection.append(ecpp)

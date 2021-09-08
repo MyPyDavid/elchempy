@@ -86,16 +86,20 @@ class ExpFolder:
         self._multi_run = multi_run
 
         # self.ecpprs = self.run(ElChemPathParser)
-        self.ecppcoll = ElChemPathParserCollection(self._files, multi_run=self._multi_run, include_metadata=True)
+        self.ecppcoll = ElChemPathParserCollection(
+            self._files, multi_run=self._multi_run, include_metadata=True
+        )
         self.ecdata = self.run(ElChemData, metadata_only=True)
 
         # self.groupby = groupby(self.ecpprs.keys(), key=lambda x: Path(x).parent.name)
         # self.groups, self.grpkeys = get_groups_keys(
-            # self.ecppcoll.keys(), lambda x: Path(x).parent
+        # self.ecppcoll.keys(), lambda x: Path(x).parent
         # )
 
     def run(self, func, **kwargs):
-        run_result = run_func_on_files(func, self._files, multi_run=self._multi_run, **kwargs)
+        run_result = run_func_on_files(
+            func, self._files, multi_run=self._multi_run, **kwargs
+        )
         return run_result
 
 
@@ -115,5 +119,9 @@ def get_groups_keys(data, keyfunc):
 if __name__ == "__main__":
     expfldr = ExpFolder(LOCAL_FILES, multi_run=True)
     self = expfldr
-    run_result = run_func_on_files(ElChemData, self._files, multi_run=self._multi_run, metadata_only=True)
-    run_result = run_func_on_files(ElChemData, self._files, multi_run=False, metadata_only=True)
+    run_result = run_func_on_files(
+        ElChemData, self._files, multi_run=self._multi_run, metadata_only=True
+    )
+    run_result = run_func_on_files(
+        ElChemData, self._files, multi_run=False, metadata_only=True
+    )

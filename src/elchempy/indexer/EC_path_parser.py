@@ -68,9 +68,11 @@ class ElChemPathParser(Path):
         # First call the FilePathParser to create all the info from the filepath
         self.fpp = FilePathParser(self)
         # super().__init__(*args, **kwargs)
-        if any('metadate'in i for i in kwargs.keys()):
-            _kws = ', '.join([f'{k}={val}' for k,val in kwargs.items()])
-            logger.warning(f"{self.__class__.__qualname__} does not do introspection for metadata\n{_kws}")
+        if any("metadate" in i for i in kwargs.keys()):
+            _kws = ", ".join([f"{k}={val}" for k, val in kwargs.items()])
+            logger.warning(
+                f"{self.__class__.__qualname__} does not do introspection for metadata\n{_kws}"
+            )
 
         parent_info = ElChemPathParser.call_tokenizer_on_part(self.parent.name)
         if parent_info.get("date_dt", None):
@@ -120,10 +122,10 @@ class ElChemPathParser(Path):
 
     @staticmethod
     def merge_info_parts(EC_info_parts):
-        '''
+        """
         merges relevant info from filepath parts: filename or parent
         depending on the info key decides to take the info from which part
-        '''
+        """
         # {str(self):
         keys = EC_info_parts.keys()
         subkeys = set([i for val in EC_info_parts.values() for i in val.keys()])
@@ -206,10 +208,10 @@ def get_most_common_split(name, name_separators=["_", "-"]):
 def tokenize_name_into_remainder(
     fname: str, name_separators=["_", "-", " "], date_from_parent=None
 ) -> Dict:
-    '''
+    """
     this method tries to find meaningful tokens, for the electrochemical experiment,
     in the filename and cuts those sequentially out of the name, leaves a remainder.
-    '''
+    """
 
     if not isinstance(fname, str):
         # in case of given path.parent
