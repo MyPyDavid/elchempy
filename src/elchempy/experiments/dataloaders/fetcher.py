@@ -3,9 +3,10 @@ Fetches data from a file and constructs the electrochemical data columns
 """
 
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, InitVar
 
 from pathlib import Path
+from typing import Union
 
 import pandas as pd
 import numpy as np
@@ -35,50 +36,10 @@ def _dev():
         print("unexpected error", ex)
         raise ex from ex
 
+    ecd = ElChemData(N2fls[1])
     self = ecd
 
-
-def reference_tables():
-    # '.par' : {
-    ActionId_to_Type_Reference = {
-        "Cyclic Voltammetry (Multiple Cycles)": 38,
-        "Chronoamperometry": 3,
-        "Unknown": 0,
-        "Potentiostatic EIS": 21,
-        "Cyclic Voltammetry": 14,
-    }
-    return ActionId_to_Type_Reference
-
-
-def _get_ECdata_from_file(arg):
-    """
-    Parameters
-    ----------
-    arg : [Path, str, pd.DataFrame, ]
-        DESCRIPTION.
-
-    Returns
-    -------
-    data : pd.DataFrame
-        DESCRIPTION.
-
-    """
-    if not arg:
-        return None
-    data = None
-    if isinstance(arg, Path) or isinstance(arg, str):
-        try:
-            data = ElchemData(filepath)
-        except Exception as e:
-            logger.warning(f"get_data_from_input failed for {arg}")
-    elif isinstance(arg, pd.DataFrame):
-        # TODO add possible double checks if hasattr(arg, column) ...
-        self.check_data_input()
-        data = arg
-    return data
-
-
-@dataclass
+# @dataclass
 class ElChemData:
     """
     Parses the data from a .PAR file into relevant electrochemical data.
@@ -89,27 +50,56 @@ class ElChemData:
     of electrochemimcal experiments.
     """
 
-    filepath: [Path, str]
+    args_keys = ['_filepath']
+    kwargs_keys = ['_metadata_only', '_kwargs']
+    called_class_keys = ['DR']
+    data_keys = ['metadata', 'actions', 'data', 'start_time', 'methods' ]
+    new_data_keys = ['new_EC_columns']
 
-    def __post_init__(self, **kwargs):
+    __slots__ = args_keys + kwargs_keys + called_class_keys + data_keys + new_data_keys
 
-        if not (isinstance(self.filepath, Path) or isinstance(self.filepath, str)):
+    def __init__(self, filepath: Union[Path, str], metadata_only: bool = False, **kwargs):
+        self._filepath = filepath
+        self._metadata_only = metadata_only
+        self._kwargs = kwargs
+        self.DR = None
+
+        if not self._filepath:
+            return
+
+        if not (isinstance(self._filepath, Path) or isinstance(self._filepath, str)):
             raise TypeError(
                 f"{self.__class__.__qualname__} filepath arg is not Path nor string, {type(self.filepath)}"
             )
 
-        # self.filepath = filepath
-        self.DR = DataReader(self.filepath)
-        self.raw_actions = self.DR.actions
-        self.raw_data = self.DR.data
-        self.data = self.raw_data.copy(deep=True)
-        self.actions = self.raw_actions.copy(deep=True)
+        # Calls the DataReader on filepath
+        self.DR = DataReader(self._filepath, metadata_only=self._metadata_only)
+
+        self.metadata = self.DR.metadata.copy()
+        # self.raw_actions = self.DR.actions
+        self.actions = self.DR.actions.copy(deep=True)
+
+        # self.raw_data = self.DR.data
+        self.data = self.DR.data.copy(deep=True)
+
+        # self.raw_metadata = self.DR.metadata
+        self.start_time = self.DR.start_time
+        # self.metadata = self.raw_metadata.copy(deep=True)
 
         if self.DR:
-            self.data, self.new_EC_colums = assign_all_EC_relevant_columns(
-                self.data, self.actions, **kwargs
-            )
+            if not self.DR.data.empty:
+                self.data, self.new_EC_columns = assign_all_EC_relevant_columns(
+                    self.data, self.actions, **kwargs
+                )
         self.methods = []
+
+    @property
+    def filepath(self) ->Union[Path, str]:
+        return self._filepath
+
+    @property
+    def metadata_only(self) -> bool:
+        return self._metadata_only
 
     def add_analysis_method(self, results_from_method):
         methodname = results_from_method.__class__.__qualname__
@@ -117,15 +107,26 @@ class ElChemData:
         setattr(self, methodname, results_from_method)
         self.methods.append(methodname)
         # else:
+    def __bool__(self):
+        return bool(self.DR)
 
     def __len__(self):
-        return len(self.data)
+        if self._metadata_only:
+            return len(self.metadata)
+        else:
+            return len(self.data)
 
     def __repr__(self):
-        _name = Path(self.filepath).name
-        _txt = f'actions={len(self.actions)}, data={len(self.data)}, methods={", ".join(map(str, self.methods))}'
+        if not self._filepath:
+            return f"{self.__class__.__qualname__}()"
+        _name = Path(self._filepath).name
+        _txt = f'metadata={len(self.metadata)}, actions={len(self.actions)}, data={len(self.data)}'
+        _methods = f'methods={", ".join(map(str, self.methods))}'
         return f"{self.__class__.__qualname__}: {_name}, {_txt}"
         # return f"{self.__class__.__qualname__}('{str(self.filepath)}')"
 
     def __str__(self):
+        if not self._filepath:
+            return f"{self.__class__.__qualname__}()"
         return str(Path(self.filepath))
+

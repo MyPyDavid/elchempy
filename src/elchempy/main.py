@@ -14,5 +14,3 @@ import experiments.EIS as EIS
 import experiments.ORR as ORR
 import FileHelper
 
-
-

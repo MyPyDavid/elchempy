@@ -25,7 +25,7 @@ import pandas as pd
 from elchempy.config import LOCAL_FILES
 from elchempy.experiments.dataloaders.files_func_collector import run_func_on_files
 
-from elchempy.indexer.EC_filepath_parser import ElchemPathParser
+from elchempy.indexer.EC_path_parser import ElChemPathParser
 from elchempy.experiments.dataloaders.fetcher import ElChemData
 from elchempy.experiments.N2.analyses import N2_Data
 
@@ -53,15 +53,19 @@ class ExperimentManager:
         self._multi_run = multi_run
         self._pre_load_data = pre_load_data
 
-        self.ecpfls = self.run(ElchemPathParser)
-        # self.ecdata = run_func_on_files(ElChemData, self._files, multi_run= self._multi_run)
+        # First call the Path parser
+        self.ecpfls = self.run(ElChemPathParser)
 
+        # Then call the Data parser with only the metadata for speed
+        self.ecmetadata = self.run(ElChemData, metadata_only=True)
+
+        # Then call specific methods for each individual experiment
         self.N2data = self.run(N2_Data)
         # run_func_on_files(N2_Data, self._files, multi_run=self._multi_run)
 
-    def run(self, func):
+    def run(self, func, **kwargs):
         """shortcut for run_func_on_files command"""
-        run_result = run_func_on_files(func, self._files, multi_run=self._multi_run)
+        run_result = run_func_on_files(func, self._files, multi_run=self._multi_run, **kwargs)
         return run_result
 
     def call_exp_file_interpreter(self):

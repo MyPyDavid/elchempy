@@ -6,11 +6,9 @@ Created on Tue Aug 24 12:00:20 2021
 
 
 import logging
-
 logger = logging.getLogger(__name__)
 
 #%% Logger CLI printing functions
-
 
 def print_CLI_args(args):
     CLI_command_msg = " ".join(

@@ -1,18 +1,23 @@
 """
-Created on Thu Jul 15 10:25:51 2021
-
-@author: DW
+Parsers for the experimental data files
 """
 
+# import datetime
 from pathlib import Path
 from html.parser import HTMLParser
 
+from typing import Tuple
 
+# 3rd party
+# import datefinder
+# import pandas as pd
+
+#%%
 class ParserError(ValueError):
     """unable to parse this file"""
 
 
-def read_PAR_file(filepath):
+def read_PAR_file(filepath: Path, break_if_line_contains='', metadata_only=False):
     """
     Special parser for Versatstudio ".par" files
 
@@ -21,9 +26,20 @@ def read_PAR_file(filepath):
     returns the Parser Object
 
     """
+
+    if metadata_only:
+        break_if_line_contains = '<Segment1>'
+
     try:
         with open(filepath) as fp:
-            fp_readlines = fp.readlines()
+            if break_if_line_contains:
+                fp_readlines = []
+                for line in fp:
+                    fp_readlines.append(line)
+                    if break_if_line_contains in line:
+                        break
+            else:
+                fp_readlines = fp.readlines()
         fp_read = find_replace_line_endings(fp_readlines)
     except OSError:
         raise ParserError(
@@ -33,6 +49,11 @@ def read_PAR_file(filepath):
     VSP = VersaStudioParser()
     VSP.feed(fp_read)
     VSP.close()
+    # FIXME TODO monkey patching kwargs
+    _kwargs = {'break_if_line_contains' : break_if_line_contains, 'metadata_only' : metadata_only}
+    VSP._kwargs = _kwargs
+    # breakpoint()
+    # metadata, actions, data = cast_parser_to_dataframe(VSP)
     # VSP._interesting_data
     return VSP
 
@@ -67,6 +88,7 @@ class VersaStudioParser(HTMLParser):
         actions
         data_body
         data_keys
+        metadata
 
     """
 
@@ -78,9 +100,14 @@ class VersaStudioParser(HTMLParser):
     # _meta_tags = ('application', 'instrument','experiment')
     _data_name = "segment"
     _action_name = "action"
+    _metadata_tags = ('application','instrument', 'mode:floating,', 'filter:normal', 'experiment')
+
+    _tags_found = []
 
     actions = {}
     data_body = {}
+    metadata = {}
+
     data_keys = []
     data_version = {}
     # wronglines = {}
@@ -95,6 +122,7 @@ class VersaStudioParser(HTMLParser):
             # if tag in self.meta_tags:
             # self._tags.append(tag)
             self.tag = tag
+            self._tags_found.append((tag, attrs))
         else:
             pass
             # print("skipped start tag :", tag)
@@ -116,7 +144,7 @@ class VersaStudioParser(HTMLParser):
             if len(data) > max_len:
                 data = data[0:max_len]
 
-        if data not in self._skipped_data:
+        if data not in self._skipped_data and self.tag not in self._skipped_tags:
 
             self._all_raw_data.update({self.tag: data})
 
@@ -142,8 +170,9 @@ class VersaStudioParser(HTMLParser):
                 # parse actions and other metadata
                 pass
                 self.actions.update(self.parse_text(data, self.tag))
-            else:
-                pass
+
+            elif self.tag in self._metadata_tags:
+                self.metadata.update(self.parse_text(data, self.tag))
             # self._all_data.update({self.tag : data.strip()})
 
     def parse_data_body(self, text, segment_name: str, data_keys: list):

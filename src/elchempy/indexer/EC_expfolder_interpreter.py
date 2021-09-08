@@ -20,7 +20,8 @@ from elchempy.indexer.extra_EC_info import loading_ref, WE_surface_area_cm2
 
 from elchempy.experiments.dataloaders.files_func_collector import run_func_on_files
 
-from elchempy.indexer.EC_filepath_parser import ElChemPathParser
+# from elchempy.indexer.EC_filepath_parser import ElChemPathParser
+from elchempy.indexer.EC_parser_collector import ElChemPathParserCollection
 from elchempy.experiments.dataloaders.fetcher import ElChemData
 
 
@@ -84,16 +85,17 @@ class ExpFolder:
         self._index = index
         self._multi_run = multi_run
 
-        self.ecpprs = self.run(ElChemPathParser)
-        self.ecdata = self.run(ElChemData)
+        # self.ecpprs = self.run(ElChemPathParser)
+        self.ecppcoll = ElChemPathParserCollection(self._files, multi_run=self._multi_run, include_metadata=True)
+        self.ecdata = self.run(ElChemData, metadata_only=True)
 
         # self.groupby = groupby(self.ecpprs.keys(), key=lambda x: Path(x).parent.name)
-        self.groups, self.grpkeys = get_groups_keys(
-            self.ecpprs.keys(), lambda x: Path(x).parent
-        )
+        # self.groups, self.grpkeys = get_groups_keys(
+            # self.ecppcoll.keys(), lambda x: Path(x).parent
+        # )
 
-    def run(self, func):
-        run_result = run_func_on_files(func, self._files, multi_run=self._multi_run)
+    def run(self, func, **kwargs):
+        run_result = run_func_on_files(func, self._files, multi_run=self._multi_run, **kwargs)
         return run_result
 
 
@@ -113,3 +115,5 @@ def get_groups_keys(data, keyfunc):
 if __name__ == "__main__":
     expfldr = ExpFolder(LOCAL_FILES, multi_run=True)
     self = expfldr
+    run_result = run_func_on_files(ElChemData, self._files, multi_run=self._multi_run, metadata_only=True)
+    run_result = run_func_on_files(ElChemData, self._files, multi_run=False, metadata_only=True)
