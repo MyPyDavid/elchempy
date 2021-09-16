@@ -2,7 +2,8 @@
 import logging
 from pathlib import Path
 
-import elchempy
+
+# import elchempy
 
 # from elchempy import
 __package_name__ = "elchempy"
@@ -65,7 +66,6 @@ importlib.resources.contents("elchempy.experiments")
 # DATA_DIR = FILE_DIR.joinpath("data")
 LOCAL_DATA_DIR = importlib.resources.files("elchempy.experiments._dev_datafiles")
 # Path(__file__).resolve().parent / 'experiments' / '_dev_datafiles'
-
 LOCAL_FILES = list(LOCAL_DATA_DIR.rglob("*/*par"))
 
 # globals LOCAL_FILES
@@ -75,6 +75,12 @@ if not LOCAL_FILES:
         f"Local data files are missing.\nIs the data folder included in the package?"
     )
 
+from file_py_helper.find_folders import FindExpFolder
+
+EXP_DATA_FOLDERS = FindExpFolder("VERSASTAT")
+
+RAW_DATA_DIR = EXP_DATA_FOLDERS.DataDir
+DEST_DATA_DIR = EXP_DATA_FOLDERS.DestDir
 
 # import configparser
 # config = configparser.ConfigParser()

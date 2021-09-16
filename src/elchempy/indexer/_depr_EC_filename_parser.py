@@ -409,6 +409,161 @@ class PAR_file_introspector:
             return [i.split("=") for i in splt_clean]
 
 
+def _depr_collect_parse_results(
+    self, read_data=False, store_data=False, **kwargs
+) -> Dict:
+    """performs all the steps for parsing the filepath"""
+    parse_res_collect = {}
+
+    self.stats_ = self.stat()
+
+    _fnID = self.make_dict_from_keys(
+        index_file_primary_keys, (self.get_rfID_from_path(self),)
+    )
+    _filepath = self.make_dict_from_keys(index_file_path_keys, (self.stem, self, self))
+    # _sample = self.parse_sample_with_checks()
+    _filestats = self.parse_filestats(self.stats_)
+    if read_data == True:
+        data = self.read_data(self)
+
+        parse_res_collect = {**_fnID, **_filepath, **_filestats}
+    else:
+        logger.warning(f"{self._qcnm} {self} is not a file => skipped")
+    # else:
+    # logger.warning(f"{self._qcnm} {self} does not exist => skipped")
+    return parse_res_collect
+
+
+#%%
+
+
+def _index_structure():
+    dr = {
+        "EXP_dir": exp_dir_path,
+        "Dest_dir": Dest_dir,
+        "EXP_date": exp_date,
+        "PAR_date": PAR_date,
+        "EXP_PAR_date_match": exp_DATE_match,
+        "EXP_PAR_folder_match": sID_dict["sID_Match_file_dir"],
+        "PAR_file": PARf,
+        "PAR_hash": hash_f,
+        "Gas": gas,
+        "PAR_exp": tpnm,
+        "postAST": postAST,
+        "filesize": PARf.stat().st_size,
+        "basename": basepf,
+        "SampleID": sID_file,
+        "SampleID_folder": sID_dict["sID_Folder"],
+        "Creation_date": cr_date,
+        "LastMod_date": mod_date,
+        "Delta_PAR_LastMod": PAR_cr_Delta,
+        "Electrode": electrode,
+        "pH": pH["pH"][0],
+        "Electrolyte": pH["Electrolyte"][0],
+        "Comment": comment_act0_DF,
+        "Loading_name": loading_name,
+        "Loading_cm2": loading_cm2,
+    }
+
+
+index_file_primary_keys = {"fID": "string"}
+
+index_file_path_keys = {"FileStem": "string", "FilePath": "Path", "PAR_file": "Path"}
+
+index_folder_path_keys = {
+    "DIR_name": "Path",
+    "DIR_dest_name": "Path",
+    "DIR_date": "datetime.date",
+}
+
+index_file_date_keys = {
+    "PAR_date": "datetime.date",
+    "PAR_introspec_data": "datetime.date",
+}
+
+index_file_sample_keys = {
+    "SampleID": "string",
+    "SampleGroup": "string",
+}
+
+index_file_read_text_keys = {"FileHash": "string", "FileText": "string"}
+
+index_dtypes_collection = {
+    **index_file_path_keys,
+    **index_file_sample_keys,
+    **index_file_read_text_keys,
+}
+
+# Extra name to sID mapper, if keys is in filename
+# _extra_sID_name_mapper = {
+#     "David": "DW",
+#     "stephen": "SP",
+#     "Alish": "AS",
+#     "Aish": "AS"}
+# Extra name to sID mapper, if key is in filepath parts
+# _extra_sgrpID_name_mapper = {"Raman Data for fitting David": "SH"}
+
+
+def _def_parse():
+    for f in LOCAL_FILES:
+        fp = FilePathParser(f)
+
+
+def _depr_parse_filestats(self, fstat) -> Dict:
+    """get status metadata from a file"""
+
+    filestats = get_fstats(fstat)
+    return self.make_dict_from_keys(index_file_stat_keys, filestats)
+
+
+def _depr_make_dict_from_keys(self, _keys_attr: Dict, _result: tuple) -> Dict:
+    """returns dict from tuples of keys and results"""
+    if not isinstance(_result, tuple):
+        logger.warning(
+            f"{self._qcnm} input value is not a tuple, {_result}. Try to cast into tuple"
+        )
+        _result = (_result,)
+
+    _keys = _keys_attr.keys()
+
+    if not len(_result) == len(_keys) and not isinstance(_keys, str):
+        # if len not matches make stand in numbered keys
+        _keys = [f"{_keys_attr}_{n}" for n, i in enumerate(_result)]
+    return dict(zip(_keys, _result))
+
+
+def _depr_parse_sample_with_checks(self):
+    """parse the sID and sgrpID from stem"""
+
+    _parse_res = filestem_to_sid_and_pos(self.stem)
+
+    if len(_parse_res) == 2:
+        sID, position = _parse_res
+
+        try:
+            sID = _extra_overwrite_sID_from_mapper(sID)
+        except Exception as exc:
+            logger.info(
+                f"{self._qcnm} {self} _extra_overwrite_sID_from_mapper failed => skipped.\n{exc}"
+            )
+
+        sgrpID = sID_to_sgrpID(sID)
+
+        try:
+            sgrpID = _extra_overwrite_sgrpID_from_parts(self.parts, sgrpID)
+        except Exception as exc:
+            logger.info(
+                f"{self._qcnm} {self} _extra_overwrite_sgrpID_from_parts failed => skipped.\n{exc}"
+            )
+
+        _parse_res = sID, position, sgrpID
+    else:
+        logger.warning(
+            f"{self._qcnm} {self} failed to parse filename to sID and position."
+        )
+    return self.make_dict_from_keys(index_file_sample_keys, _parse_res)
+
+
 #       soup_segment=
 #       for ch in self.PAR_soup.instrument.children:
 #           print(ch)

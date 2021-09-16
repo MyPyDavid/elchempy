@@ -47,3 +47,31 @@ def relative_parent_paths_to_common_folder(files, common_folder: Path) -> List[P
             relp = "unkown_error"
         rel_paths.append(relp)
     return rel_paths
+
+
+def find_relevant_files_in_folder(folder):
+    # folder = LOCAL_FILES[0].parent.parent
+    from elchempy.dataloaders.reader import DataReader
+
+    supported_filetypes = DataReader.supported_filetypes
+    files = []
+    for suffix in supported_filetypes:
+        try:
+            if isinstance(folder, str):
+                folder = Path(folder)
+            if not folder.is_dir():
+                raise ValueError(f"Given folder {folder} is not a dir")
+
+            rglobs = folder.rglob("*" + suffix)
+            files += list(rglobs)
+        except Exception as e:
+            logger.error(f"find_relevant_files_in_folder Unexpected error {exc}")
+    return files
+
+
+def _dev_test():
+    folder = LOCAL_FILES[0].parent.parent
+    folder = (
+        "/mnt/DATA/EKTS_CloudStation/CloudStation/Experimental data/Raw_data/VERSASTAT"
+    )
+    find_relevant_files_in_folder(folder)

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 import elchempy
 
-from elchempy.experiments.dataloaders.fetcher import ElChemData
+from elchempy.dataloaders.fetcher import ElChemData
 from elchempy.experiments.N2.background_scan import get_N2_background_data
 
 from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
@@ -51,7 +51,10 @@ class _DevClass:
 
 
 def new_runner():
-    from elchempy.experiments.dataloader._dev_fetcher import get_files, _dev_test_read
+    from elchempy.experiments._dev_datafiles._dev_fetcher import (
+        get_files,
+        _dev_test_read,
+    )
 
     _result = []
     for fl in get_files("O2"):
@@ -83,10 +86,10 @@ class N2_Data(ElChemData):
     # PAR_exp = 'N2'
 
     def __init__(self, filepath: [Path, str], **kwargs):
-        self.filepath = Path(filepath)
-        self.kwargs = kwargs
-        self.data = None
-        super().__post_init__()
+        # self.filepath = Path(filepath, **kwargs)
+        # self.kwargs = kwargs
+        # self.data = None
+        super().__init__(filepath, **kwargs)
 
         self.N2_CVs = pd.DataFrame()
         self.N2_CVs = N2_Data.select_data(self.data)
@@ -107,6 +110,10 @@ class N2_Data(ElChemData):
         except Exception as ex:
             logger.error(f"{self} select data error\m{ex}")
             N2_CVs = pd.DataFrame()
+        else:
+            if N2_CVs.empty:
+                logger.warning("select_data is empty, file does not contain any N2 CVs")
+
         return N2_CVs
 
     @staticmethod

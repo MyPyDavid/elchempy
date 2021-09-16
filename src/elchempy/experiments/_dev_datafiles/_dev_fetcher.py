@@ -5,8 +5,8 @@ Created on Thu Jul 15 16:12:27 2021
 """
 from pathlib import Path
 
-from elchempy.experiments.dataloaders.reader import DataReader
-from elchempy.experiments.dataloaders.fetcher import ElChemData
+from elchempy.dataloaders.reader import DataReader
+from elchempy.dataloaders.fetcher import ElChemData
 from elchempy.config import LOCAL_FILES
 
 
