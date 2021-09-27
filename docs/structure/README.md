@@ -5,7 +5,6 @@ structure is explained here:
 
 ```{toctree}
 :maxdepth: 2
-./experiments
 ./data.md
 ./docs.md
 ./notebooks.md
