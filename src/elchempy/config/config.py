@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 CONFIG_FILE = Path(__file__).resolve()
 PACKAGE_ROOT = CONFIG_FILE.parent.parent
-MODEL_DIR = PACKAGE_ROOT / "deconvolution_models"
+# MODEL_DIR = PACKAGE_ROOT / "deconvolution_models"
 
 # TESTS_ROOT_DIR = PACKAGE_ROOT.parent.parent / "tests"
 # TESTS_ROOT_DIR =

@@ -1,16 +1,63 @@
 """
-Created on Sat Jul 17 13:21:42 2021
 
-@author: DW
+this module prepares a background scan from the N2 data for an ORR measurement
+
 """
 
+## std lib
+from typing import NamedTuple, Tuple, Dict
+from collections import namedtuple
+from pathlib import Path
 
-def get_N2_background_data():
-    return None
+import logging
+
+logger = logging.getLogger(__name__)
+
+## local
+import elchempy
+
+# from elchempy.dataloaders.fetcher import ElChemData
+# from elchempy.experiments.N2.background_scan import contains_background_scan, get_N2_background_data
+
+from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
+
+## 3rd party
+import numpy as np
+import pandas as pd
+from scipy.stats import linregress, zscore
+
+## constants
+EvRHE = "E_vs_RHE"
+#%%
 
 
+def contains_background_scan(N2_CVs, maximum_scanrate=0.011, scan_length=2000):
+    """checks if the data possibly contains a N2 background scan"""
 
-def GET_BACKGROUND_N2_FOR_ORR(N2_CVs):
+    if N2_CVs.empty:
+        return False
+
+    sr_min = N2_CVs.scanrate.min()
+
+    if not (0 < sr_min <= maximum_scanrate):  # check presence of slow scanrates
+        return False
+
+    sr_grp_min = N2_CVs.loc[N2_CVs.scanrate == sr_min]
+    if len(sr_grp_min) < scan_length:
+        return False
+
+    if not any(
+        [n for n, gr in sr_grp_min.groupby("Segment #") if len(gr) == scan_length]
+    ):
+        return False
+
+    return True
+
+
+def get_N2_background_data(N2_CVs):
+
+    if not contains_background_scan(N2_CVs):
+        return None
     #            N2_scan = grA.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','0.1'))
     ### === Prepare the background N2 scan (10 mV/s) for ORR with exactly 2000 rows === ###
     preN2_scan = N2_CVs.drop_duplicates()

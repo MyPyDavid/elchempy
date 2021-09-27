@@ -23,10 +23,10 @@ from pathlib import Path
 import pandas as pd
 
 from elchempy.config import LOCAL_FILES
-from elchempy.experiments.dataloaders.files_func_collector import run_func_on_files
+from elchempy.dataloaders.files_func_collector import run_func_on_files
 
 from elchempy.indexer.EC_path_parser import ElChemPathParser
-from elchempy.experiments.dataloaders.fetcher import ElChemData
+from elchempy.dataloaders.fetcher import ElChemData
 from elchempy.experiments.N2.analyses import N2_Data
 
 import logging
@@ -89,6 +89,8 @@ class ExperimentManager:
 
 
 class BaseRunner(ABC):
+    """Abstract base class, with placeholder methods"""
+
     def get_data_from_collection_or_other(self, arg):
         """
         Parameters

@@ -4,181 +4,44 @@ this module calculates the Cdl from Cyclic Voltammetries measured in N2 at sever
 
 """
 
+## std lib
 from typing import NamedTuple, Tuple, Dict
 from collections import namedtuple
 from pathlib import Path
-
-import numpy as np
-import pandas as pd
-from scipy.stats import linregress, zscore
 
 import logging
 
 logger = logging.getLogger(__name__)
 
-
+## local
 import elchempy
 
-from elchempy.dataloaders.fetcher import ElChemData
-from elchempy.experiments.N2.background_scan import get_N2_background_data
+# from elchempy.dataloaders.fetcher import ElChemData
+# from elchempy.experiments.N2.background_scan import contains_background_scan, get_N2_background_data
 
 from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
 
-#        grB = N2_CVs.groupby(by=['Gas','Type','EXP'])
-#        for scan in grB.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','N2_act')):
-#            print(scan)
-#                grA.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','0.1'))
-#        grB.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','N2_act')).to_csv(N2_dest_dir.joinpath('%s.csv' %N2_fn))
+## 3rd party
+import numpy as np
+import pandas as pd
+from scipy.stats import linregress, zscore
 
-
-class _DevClass:
-    from elchempy.experiments._dev_datafiles._dev_fetcher import (
-        get_files,
-        _dev_test_read,
-    )
-
-    def _test_data(exp_type: str):
-        datacollection = _dev_test_read(get_files(exp_type))
-        return datacollection
-
-    def _test_runner():
-
-        _results = []
-        for ecdata in _test_data("N2"):
-            ecdata = N2_analysis(ecdata)
-            _results.append(ecdata)
-        return _results
-
-
-def new_runner():
-    from elchempy.experiments._dev_datafiles._dev_fetcher import (
-        get_files,
-        _dev_test_read,
-    )
-
-    _result = []
-    for fl in get_files("O2"):
-        N2res = N2_Data(fl)
-        _result.append(N2res)
-    return _result
-
-
-# N2_results = namedtuple('N2', 'raw_data pars data N2_BG')
-
-
-class N2_Results(NamedTuple):
-    raw_data: pd.DataFrame
-    pars: pd.DataFrame
-    data: pd.DataFrame
-    N2_BG: pd.DataFrame
-
-
+## constants
 EvRHE = "E_vs_RHE"
 
-if 0:
-    nn = N2_data(
-        "//mnt/DATA/APPS_SOFT/VENVS/repos/elchempy/data/raw/06.03.2018_DW28_HPRR_0.1MHClO4_RRDE22960/N2_20cls_300_100_10_DW28_298.par"
-    )
+#%%
 
 
-class N2_Data(ElChemData):
+def N2_Cdl_calculations(
+    N2_CVs: pd.DataFrame,
+    EvRHE: str,
+    current_density_key: str = "j_A_cm2",
+    potential_key: str = EvRHE,
+):
+    """performs the calculations for the capacity (double layer) on the data"""
 
-    # PAR_exp = 'N2'
-
-    def __init__(self, filepath: [Path, str], **kwargs):
-        # self.filepath = Path(filepath, **kwargs)
-        # self.kwargs = kwargs
-        # self.data = None
-        super().__init__(filepath, **kwargs)
-
-        self.N2_CVs = pd.DataFrame()
-        self.N2_CVs = N2_Data.select_data(self.data)
-
-        self.N2_results = None
-        if not self.N2_CVs.empty:
-            self.N2_results = N2_Data.get_N2_analysis_results(self.N2_CVs)
-
-        # self.add_analysis_method(N2_results)
-
-    @staticmethod
-    def select_data(data):
-        # FIXME Select only CV types from Data segment
-        # Select the data for N2 Cyclic Voltammograms
-        try:
-            N2_CVs = data.loc[data.ActionId == 38]
-            N2_CVs = N2_CVs.dropna(subset=["scanrate"]).loc[N2_CVs.scanrate_calc != 0]
-        except Exception as ex:
-            logger.error(f"{self} select data error\m{ex}")
-            N2_CVs = pd.DataFrame()
-        else:
-            if N2_CVs.empty:
-                logger.warning("select_data is empty, file does not contain any N2 CVs")
-
-        return N2_CVs
-
-    @staticmethod
-    def get_N2_analysis_results(N2_CVs: pd.DataFrame) -> N2_Results:
-        """
-        Performs the steps in the N2 analysis and add the
-        results to the ElchemData instance.
-
-        Parameters
-        ----------
-        ecdata : ElchemData
-            contains the raw data.
-
-        Returns
-        -------
-        ecdata : ElchemData
-            contains the results in an added method as attribute "N2".
-
-        """
-
-        # ElChemData
-        Cdl_pars, Cdl_data = pd.DataFrame(), pd.DataFrame()
-        # scanrates = N2_CVs.scanrate.unique()
-        if N2_CVs.scanrate.nunique() > 2:
-            # if multiple scanrates are present than calculations can start
-            Cdl_pars, Cdl_data = CDL(N2_CVs, EvRHE=EvRHE)
-        # Check if possible background (BG) scan is in the data
-        BG_present = False
-        N2_BG = pd.DataFrame()
-        if N2_CVs.scanrate.min() < 0.015:
-            # check presence of slow scanrates in data
-            BG_present = True
-        if BG_present:
-            N2_BG = get_N2_background_data()
-
-        N2_results = N2_Results(N2_CVs, Cdl_pars, Cdl_data, N2_BG)
-
-        return N2_results
-
-    def _test_plot_Cdl(self):
-        if not self.N2_results:
-            logger.warning(f"N2_results is None {self.filepath.name}")
-            return
-
-        if self.N2_results.pars.empty:
-            logger.warning(f"N2_results is empty {self.filepath.name}")
-            return
-
-        self.N2_results.pars.groupby("SweepType").plot(
-            x="E_vs_RHE", y="lin_slope", kind="scatter"
-        )
-
-    def _test_plot_scanrates(self):
-        if not self.N2_results:
-            logger.warning(f"N2_results is None {self.filepath.name}")
-            return
-
-        if self.N2_results.raw_data.empty:
-            logger.warning(f"N2_results is empty {self.filepath.name}")
-            return
-
-        N2_plot_raw_scans_scanrate(self.N2_results.raw_data)
-
-
-def CDL(N2_CVs: pd.DataFrame, EvRHE: str):
+    if N2_CVs.empty:
+        return None
 
     scanrates = N2_CVs.scanrate.unique()
 
@@ -189,16 +52,16 @@ def CDL(N2_CVs: pd.DataFrame, EvRHE: str):
 
     _N2_scans_lst = []
     for sr in scanrates:
-        sr_mV = int(sr * 1000)
 
+        sr_mV = int(sr * 1000)
         N2sr = srgrpby.get_group(sr)
         segments = N2sr["Segment #"].unique()
 
-        N2sr_lastseg = check_if_last_seg_isnormal(N2sr)
+        N2sr_lastseg = check_if_last_segment_is_normal(N2sr)
         if len(segments) > 1:
             pass  # TODO do sth with 1st seg
-
         _N2_scans_lst.append(N2sr_lastseg)
+
     N2_scans = pd.concat(_N2_scans_lst)
     Cdl_dataprep = prepare_Cdl_frame(N2_scans)
     j_key = prepare_Cdl_frame.__defaults__[0]  # !!! check definition for key
@@ -210,7 +73,6 @@ def CDL(N2_CVs: pd.DataFrame, EvRHE: str):
     if False:
         for ycol in ["lin_slope", "lin_intercept"]:
             Cdl_pars.groupby("SweepType").plot(x=EvRHE, y=ycol)
-
     # Cdl_data.query("lin_zscore_y < 3")
     if False:
         Resmean = Cdl_data.groupby([EvRHE, "SweepType"]).mean()
@@ -221,14 +83,14 @@ def CDL(N2_CVs: pd.DataFrame, EvRHE: str):
         Cdl_pars = check_for_linear_baseline_correction_of_Cdl_values(Cdl_pars)
 
     Cdl_pars = get_Cdl_pars_per_E(Cdl_pars)
-    return Cdl_pars, Cdl_data
-
     # TODO SEND TO PLOTS AND EXPORT
+    return Cdl_pars, Cdl_data
 
 
 def get_Cdl_pars_per_E(
     Cdl_data: pd.DataFrame, E_linspace=np.linspace(0, 1, 51)
 ) -> pd.DataFrame:
+    """selects certain potential E values from the data"""
 
     # _swplst = []
     Cdl_swp_E_selection_lst = []
@@ -289,18 +151,23 @@ def make_cdl_pars_data_from_linregress(
                 grpkeyval = dict(zip(grpbykeys, (Ev, nm)))
 
                 pars, data = linregress_residual(gr[xcol], gr[ycol])
-
                 # gr_pars = gr.drop(columns=[xcol, ycol]).assign(**pars)
                 gr_pars = pd.DataFrame(pars, index=gr.index[0:1]).assign(**grpkeyval)
                 cdl_pars_lst.append(gr_pars)
 
                 gr_data = pd.DataFrame(data).assign(**grpkeyval)
                 cdl_data_lst.append(gr_data)
-        if cdl_pars_lst and cdl_data_lst:
-            cdl_pars = pd.concat(cdl_pars_lst)
+
+        if cdl_data_lst:
             cdl_data = pd.concat(cdl_data_lst)
         else:
-            logger.warning("make_linregress_Cdl_Ztest error, empty pars and data")
+            logger.warning("make_linregress_Cdl_Ztest error, empty data")
+
+        if cdl_pars_lst:
+            cdl_pars = pd.concat(cdl_pars_lst)
+        else:
+            logger.warning("make_linregress_Cdl_Ztest error, empty pars ")
+
     else:
         logger.warning("make_linregress_Cdl_Ztest error, missing columns")
 
@@ -342,7 +209,6 @@ def linregress_residual(x, y) -> Tuple[Dict, Dict]:
         "lin_zscore_y": Z,
     }
     return linfit_pars, linfit_data
-    # return gr
 
 
 def check_for_linear_baseline_correction_of_Cdl_values(Cdl_pars) -> pd.DataFrame:
@@ -351,6 +217,9 @@ def check_for_linear_baseline_correction_of_Cdl_values(Cdl_pars) -> pd.DataFrame
     for swpnm, swpgrp in Cdl_pars.groupby("SweepType"):
 
         swpgrp_r085 = swpgrp.query("lin_rvalue > 0.85")
+
+        if swpgrp_r085.empty:
+            continue
 
         lin_baseline = linregress(swpgrp_r085[EvRHE], swpgrp_r085["lin_slope"])
 
@@ -373,10 +242,8 @@ def prepare_Cdl_frame(
     E_linspace=np.linspace(0.1, 1, 50),
 ) -> pd.DataFrame:
     """
-
     Prepares the raw data from CV at several scanrates to frame with
     a only relevant columns and potentials from a linspace.
-
 
     Parameters
     ----------
@@ -424,7 +291,7 @@ def prepare_Cdl_frame(
     return Cdl_data
 
 
-def check_if_last_seg_isnormal(N2sr: pd.DataFrame) -> pd.DataFrame:
+def check_if_last_segment_is_normal(N2sr: pd.DataFrame) -> pd.DataFrame:
     """checks if the scan of the last segment is "normal" similar to the other scans at the same scan rate"""
     uniq_segs = N2sr["Segment #"].unique()
     nuniq_segs = N2sr["Segment #"].nunique()

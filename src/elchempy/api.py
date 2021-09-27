@@ -12,7 +12,6 @@ Created on Tue Jul 13 09:01:47 2021
 
 # import runEC
 
+from elchempy.experiments.N2.test_analysis import N2_runner
 
-from elchempy.experiments.N2.analyses import _DevClass
-
-N2_test = _DevClass._test_runner
+N2_test = N2_runner

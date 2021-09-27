@@ -159,11 +159,11 @@ def main():
         args.run_mode = args.run_mode.upper()
         # TODO Add a FAST TRACK for DEBUG
     elif args.run_mode == "testing":
-        from elchempy.experiments.N2.analyses import new_runner
+        from elchempy.experiments.N2.test_analysis import N2_runner as test_runner
 
-        _result = new_runner()
-        _ress = ",\n====\n".join(map(repr, _result))
-        print(f"Finished:\n{_ress }")
+        _result = test_runner()
+        _res_text = ",\n====\n".join(map(repr, _result))
+        print(f"Finished:\n{_res_text}")
 
     # _main_run = rf.MainDelegator(**vars(args))
 

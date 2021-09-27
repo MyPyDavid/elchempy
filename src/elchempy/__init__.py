@@ -13,7 +13,7 @@ import warnings
 
 __author__ = "David Wallace"
 __package_name__ = "elchempy"
-__docformat__ = "restructuredtext"
+__docformat__ = "markdown"
 __status__ = "Development"
 
 
@@ -32,7 +32,7 @@ import logging
 
 
 class _mock_FindExpFolder:
-    """Mock in place class to maintain logging functionality"""
+    """Mock in place class to maintain FindExpFolder functionality"""
 
     def __init__(self, arg):
         if arg == "VERSASTAT":
@@ -115,7 +115,8 @@ for dependency in soft_dependencies:
 del hard_dependencies, soft_dependencies, dependency, missing_dependencies
 
 
-from api import N2_test
+import elchempy
+from elchempy.api import N2_test
 
 # import experiments
 # TODO main list

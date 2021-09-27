@@ -6,11 +6,13 @@ project directory.
 
 ## Overview
 The sub-folders should be used as follows:
+- `config` : contains the local configuration settings, such as file paths.
+- `dataloader` : Functions for loading the data from experimental files.
+- `indexer`: Makes an overview of the experimental data files.
 - `experiments`: Data processing and analysis for each type of experiment in the sub-folders.
-  - `dataloader` : Functions for loading the data from experimental files.
   - `N2` : Measurements in nitrogen (N2) saturated electrolyte.
 
-- `indexer`: Makes an overview of the experimental data files.
+
 
 ### Api
 ``` python
@@ -31,7 +33,7 @@ N2_scans = elchempy.N2_test()
   - `make_features`: Feature-related functions, for example,      functions to create features
   from processed data;
   - `make_models`: Model-related functions;
-  - `make_visualisations`: Functions to produce visualisations; 
+  - `make_visualisations`: Functions to produce visualisations;
   - `utils`: Utility functions that are helpful in the project.
 
 

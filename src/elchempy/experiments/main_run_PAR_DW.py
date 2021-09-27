@@ -5,6 +5,9 @@ Created on Sat Jul 22 15:05:57 2017
 This module reads PAR files in a certain folder and tries to analyze the experimental data
 from N2, ORR, OER, HER, HPRR and EIS measurements.
 """
+
+# TODO a lot for this module
+
 # import os
 import sys
 

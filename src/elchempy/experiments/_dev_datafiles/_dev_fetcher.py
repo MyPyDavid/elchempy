@@ -14,6 +14,7 @@ __all__ = ["_dev_get_files", "_dev_test_read", "_test_read"]
 
 
 def get_files(name="", files=LOCAL_FILES):
+    """returns all local data files for testing purposes"""
 
     _files = list([i for i in files if name in str(i)])
     if not _files:
@@ -73,8 +74,11 @@ def _dev():
     return _n2files
 
 
-def _test_read():
-    files = _dev()
+def _test_read_files():
+    """reads all test files and plots the data"""
+    import matplotlib.pyplot as plt
+
+    files = get_files()
     results = []
     for filepath in files:
         DR = DataReader(str(filepath))
@@ -82,6 +86,17 @@ def _test_read():
         actions = DR.actions
         data = DR.data
         # if True:
-        data.plot(x="E(V)", y="I(A)", title=filepath.name)
-        if any("EIS" in name for name in actions.Name.unique()):
-            data.plot(x="Z Real", y="Z Imag", title=filepath.name)
+        try:
+            fig, ax = plt.subplots()
+
+            data.groupby("Segment #").plot(
+                x="E(V)", y="I(A)", title=filepath.name, ax=ax
+            )
+            if any(i for i in actions.Name.unique() if "EIS" in i):
+                data.groupby("Segment #").plot(
+                    x="Z Real", y="Z Imag", kind="scatter", title=filepath.name, ax=ax
+                )
+            plt.show()
+            plt.close()
+        except Exception as exc:
+            print(f"Plotting error for {filepath}:\n{exc}")
