@@ -1,17 +1,6 @@
-"""
-Created on Tue Jul 13 09:01:47 2021
-
-@author: DW
-"""
-# runEC
-# import .experiments
-
-# import .indexer
-
-# import PostEC
-
-# import runEC
+""" definition of api functions """
 
 
-from .experiments.N2.analyses import _DevClass
-N2_test = _DevClass._test_runner
+from elchempy.experiments.N2.test_analysis import N2_runner
+
+N2_test = N2_runner

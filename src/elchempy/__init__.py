@@ -5,19 +5,34 @@ Created on Sat Jan 25 13:43:14 2020
 
 @author: zmg
 """
+
+# __import__("pkg_resources").declare_namespace(__name__)
+
 import sys
 import warnings
 
+__author__ = "David Wallace"
 __package_name__ = "elchempy"
+__docformat__ = "markdown"
+__status__ = "Development"
+
+
+try:
+    from ._version import version
+
+    __version__ = version
+except:
+    __version__ = "__version__ = '0.0.1'"
+
 
 from pathlib import Path
 import logging
 
-from .config import config
+# from elchempy.config import config
 
 
 class _mock_FindExpFolder:
-    """Mock in place class to maintain logging functionality"""
+    """Mock in place class to maintain FindExpFolder functionality"""
 
     def __init__(self, arg):
         if arg == "VERSASTAT":
@@ -99,9 +114,11 @@ for dependency in soft_dependencies:
 
 del hard_dependencies, soft_dependencies, dependency, missing_dependencies
 
-from .api import *
-# import experiments
 
+import elchempy
+from elchempy.api import N2_test
+
+# import experiments
 # TODO main list
 # TODO add logger.config file
 # TODO remove file-py-helper dependency:

@@ -34,8 +34,6 @@ make requirements
   credentials](#required-secrets-and-credentials)
 - [Load environment variables][docs-loading-environment-variables] from `.envrc`
 
-To be added.
-
 ## Required secrets and credentials
 
 To run this project, you need a `.secrets` file with secrets/credentials as

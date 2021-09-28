@@ -6,23 +6,93 @@ Created on Wed Jul  7 15:56:24 2021
 
 from typing import List, Tuple
 from abc import ABC, abstractmethod
-from collections.abc import Collection, Mapping, Sequence, Generator, Iterable, MutableSequence, Hashable , Container, Callable
+from collections.abc import (
+    Collection,
+    Mapping,
+    Sequence,
+    Generator,
+    Iterable,
+    MutableSequence,
+    Hashable,
+    Container,
+    Callable,
+)
 
 from pathlib import Path
-import logging
 
 import pandas as pd
 
-from elchempy.experiments.dataloader.fetcher import ElchemData
+from elchempy.config import LOCAL_FILES
+from elchempy.dataloaders.files_func_collector import run_func_on_files
+
+from elchempy.indexer.EC_path_parser import ElChemPathParser
+from elchempy.dataloaders.fetcher import ElChemData
+from elchempy.experiments.N2.analyses import N2_Data
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
+def _dev():
+
+    expm = ExperimentManager(files)
+    self = expm
+    n2 = self.N2data[
+        "/mnt/DATA/APPS_SOFT/REPOS/elchempy/src/elchempy/experiments/_dev_datafiles/06.03.2018_DW28_HPRR_0.1MHClO4_RRDE22960/N2_20cls_300_100_10_DW28_298.par"
+    ]
+    n2._test_plot_Cdl()
+    [i._test_plot_scanrates() for i in self.N2data.values()]
+
+
+class ExperimentManager:
+    """The ExperimentManager takes in a request and files to start running the analyses of each experiment"""
+
+    def __init__(self, files, multi_run=False, pre_load_data=False):
+        self._files = files
+        self._multi_run = multi_run
+        self._pre_load_data = pre_load_data
+
+        # First call the Path parser
+        self.ecpfls = self.run(ElChemPathParser)
+
+        # Then call the Data parser with only the metadata for speed
+        self.ecmetadata = self.run(ElChemData, metadata_only=True)
+
+        # Then call specific methods for each individual experiment
+        self.N2data = self.run(N2_Data)
+        # run_func_on_files(N2_Data, self._files, multi_run=self._multi_run)
+
+    def run(self, func, **kwargs):
+        """shortcut for run_func_on_files command"""
+        run_result = run_func_on_files(
+            func, self._files, multi_run=self._multi_run, **kwargs
+        )
+        return run_result
+
+    def call_exp_file_interpreter(self):
+
+        pass
+
+    def call_exp_file_introspectors(self):
+
+        ecdata = get_elchem_parsers_from_files(
+            ElChemData, self._files, multi_run=self._multi_run
+        )
+        self.ecdata = ecdata
+
+    def exp_file_explorers(self):
+        pass
+
+    def exp_developer(self):
+        pass
+
+
 class BaseRunner(ABC):
+    """Abstract base class, with placeholder methods"""
 
     def get_data_from_collection_or_other(self, arg):
-        '''
+        """
         Parameters
         ----------
         arg : TYPE
@@ -32,25 +102,21 @@ class BaseRunner(ABC):
         -------
         None.
 
-        '''
+        """
 
         if isinstance(arg, Callable):
-            raise ValueError('arg can not be a Callable')
-
+            raise ValueError("arg can not be a Callable")
 
         if not isinstace(arg, Iterable) or isinstace(arg, str):
             return self.get_data_from_input(arg)
 
         if isinstace(arg, MutableSequence):
-                self.start_loop_input_collection()
-            else:
+            self.start_loop_input_collection()
+        # else:
+        #     if isinstace(arg, MutableSequence):
+        # self.start_loop_input_collection(arg)
+        # for i in arg:
 
-                if isinstace(arg, MutableSequence):
-
-
-            self.start_loop_input_collection(arg)
-
-            # for i in arg:
         else:
             self.get_data_from_input(arg)
 
@@ -59,37 +125,8 @@ class BaseRunner(ABC):
             self.get_data_from_input(i)
 
     @staticmethod
-    def get_data_from_input(arg):
-        '''
-        Parameters
-        ----------
-        arg : [Path, str, pd.DataFrame, ]
-            DESCRIPTION.
-
-        Returns
-        -------
-        data : pd.DataFrame
-            DESCRIPTION.
-
-        '''
-        if not arg:
-            return None
-
-        data = None
-
-        if isinstance(arg, Path) or isinstance(arg, str):
-            try:
-                data = ElchemData(filepath)
-            except Exception as e:
-                logger.warning(f"get_data_from_input failed for {arg}")
-
-        elif isinstance(arg, pd.DataFrame):
-            # TODO add possible double checks if hasattr(arg, column) ...
-
-            data = arg
-
-
-        return data
+    def check_data_input(self):
+        pass
 
     # @abstractmethod
     def check_input_slice():
@@ -102,3 +139,9 @@ class BaseRunner(ABC):
     # @abstractmethod
     def run_serial(self):
         pass
+
+
+if __name__ == "__main__":
+
+    expm = ExperimentManager(LOCAL_FILES, multi_run=True)
+    [i._test_plot_scanrates() for i in expm.N2data.values()]

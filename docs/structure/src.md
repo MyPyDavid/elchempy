@@ -1,2 +1,2 @@
-```{include} ../../src/README.md
+```{include} ../../src/elchempy/README.md
 ```

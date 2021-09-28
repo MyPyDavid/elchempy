@@ -1,0 +1,54 @@
+ERROR: Command errored out with exit status 1:
+  command: /usr/bin/python /home/zmg/.local/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmpi0h8bihg
+      cwd: /mnt/DATA/APPS_SOFT/REPOS/elchempy
+ Complete output (47 lines):
+ Traceback (most recent call last):
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/pkg_resources/_vendor/packaging/requirements.py", line 98, in __init__
+     req = REQUIREMENT.parseString(requirement_string)
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/pkg_resources/_vendor/pyparsing.py", line 1654, in parseString
+     raise exc
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/pkg_resources/_vendor/pyparsing.py", line 1644, in parseString
+     loc, tokens = self._parse( instring, 0 )
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/pkg_resources/_vendor/pyparsing.py", line 1402, in _parseNoCache
+     loc,tokens = self.parseImpl( instring, preloc, doActions )
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/pkg_resources/_vendor/pyparsing.py", line 3417, in parseImpl
+     loc, exprtokens = e._parse( instring, loc, doActions )
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/pkg_resources/_vendor/pyparsing.py", line 1406, in _parseNoCache
+     loc,tokens = self.parseImpl( instring, preloc, doActions )
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/pkg_resources/_vendor/pyparsing.py", line 3205, in parseImpl
+     raise ParseException(instring, loc, self.errmsg, self)
+ pkg_resources._vendor.pyparsing.ParseException: Expected stringEnd (at char 10), (line:1, col:11)
+
+ During handling of the above exception, another exception occurred:
+
+ Traceback (most recent call last):
+   File "/home/zmg/.local/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py", line 349, in <module>
+     main()
+   File "/home/zmg/.local/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py", line 331, in main
+     json_out['return_val'] = hook(**hook_input['kwargs'])
+   File "/home/zmg/.local/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py", line 117, in get_requires_for_build_wheel
+     return hook(config_settings)
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/setuptools/build_meta.py", line 154, in get_requires_for_build_wheel
+     return self._get_build_requires(
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/setuptools/build_meta.py", line 135, in _get_build_requires
+     self.run_setup()
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/setuptools/build_meta.py", line 150, in run_setup
+     exec(compile(code, __file__, 'exec'), locals())
+   File "setup.py", line 8, in <module>
+     setuptools.setup()
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/setuptools/__init__.py", line 152, in setup
+     _install_setup_requires(attrs)
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/setuptools/__init__.py", line 147, in _install_setup_requires
+     dist.fetch_build_eggs(dist.setup_requires)
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/setuptools/build_meta.py", line 58, in fetch_build_eggs
+     specifier_list = list(map(str, parse_requirements(specifiers)))
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/pkg_resources/__init__.py", line 3084, in parse_requirements
+     yield Requirement(line)
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/pkg_resources/__init__.py", line 3094, in __init__
+     super(Requirement, self).__init__(requirement_string)
+   File "/tmp/pip-build-env-n31i_iii/overlay/lib/python3.9/site-packages/pkg_resources/_vendor/packaging/requirements.py", line 100, in __init__
+     raise InvalidRequirement(
+ pkg_resources.extern.packaging.requirements.InvalidRequirement: Parse error at "', setupt'": Expected stringEnd
+ ----------------------------------------
+WARNING: Discarding file:///mnt/DATA/APPS_SOFT/REPOS/elchempy. Command errored out with exit status 1: /usr/bin/python /home/zmg/.local/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmpi0h8bihg Check the logs for full command output.
+ERROR: Command errored out with exit status 1: /usr/bin/python /home/zmg/.local/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmpi0h8bihg Check the logs for full command output.
