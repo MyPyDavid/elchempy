@@ -34,6 +34,9 @@ EvRHE = "E_vs_RHE"
 def contains_background_scan(N2_CVs, maximum_scanrate=0.011, scan_length=2000):
     """checks if the data possibly contains a N2 background scan"""
 
+    if not isinstance(N2_CVs, pd.DataFrame):
+        return False
+
     if N2_CVs.empty:
         return False
 

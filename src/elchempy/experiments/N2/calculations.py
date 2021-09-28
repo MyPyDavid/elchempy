@@ -1,6 +1,6 @@
 """
 
-this module calculates the Cdl from Cyclic Voltammetries measured in N2 at several scanrates
+this module calculates the capacity (or Cdl) from Cyclic Voltammetries measured in N2 at several scanrates
 
 """
 
@@ -20,6 +20,7 @@ import elchempy
 # from elchempy.experiments.N2.background_scan import contains_background_scan, get_N2_background_data
 
 from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
+from elchempy.regressions.linear import linregress_residual
 
 ## 3rd party
 import numpy as np
@@ -32,7 +33,7 @@ EvRHE = "E_vs_RHE"
 #%%
 
 
-def N2_Cdl_calculations(
+def N2_Cdl_calculation(
     N2_CVs: pd.DataFrame,
     EvRHE: str,
     current_density_key: str = "j_A_cm2",
@@ -43,7 +44,7 @@ def N2_Cdl_calculations(
     if N2_CVs.empty:
         return None
 
-    scanrates = N2_CVs.scanrate.unique()
+    scanrates = [i for i in N2_CVs.scanrate.unique() if i > 0]
 
     srgrpby = N2_CVs.groupby("scanrate")
 
@@ -57,14 +58,16 @@ def N2_Cdl_calculations(
         N2sr = srgrpby.get_group(sr)
         segments = N2sr["Segment #"].unique()
 
-        N2sr_lastseg = check_if_last_segment_is_normal(N2sr)
+        N2sr_lastseg = check_if_last_segment_is_normal(
+            N2sr, current_density_key=current_density_key
+        )
         if len(segments) > 1:
             pass  # TODO do sth with 1st seg
         _N2_scans_lst.append(N2sr_lastseg)
 
     N2_scans = pd.concat(_N2_scans_lst)
     Cdl_dataprep = prepare_Cdl_frame(N2_scans)
-    j_key = prepare_Cdl_frame.__defaults__[0]  # !!! check definition for key
+    # j_key = prepare_Cdl_frame.__defaults__[0]  # !!! check definition for key
     # Cdl_data.groupby("SweepType").plot(x='scanrate',y=j_key,kind='scatter')
 
     # Make a linear test and filter somehow???
@@ -174,43 +177,6 @@ def make_cdl_pars_data_from_linregress(
     return cdl_pars, cdl_data
 
 
-def linregress_residual(x, y) -> Tuple[Dict, Dict]:
-    """
-    linear regression of x and y values
-
-    Parameters
-    ----------
-    x : array type
-        DESCRIPTION.
-    y : array type
-        DESCRIPTION.
-
-    Returns
-    -------
-    linfit_pars : dict
-        contains the linear fit parameters.
-    linfit_data : dict
-        contains the linear fit data.
-    """
-    # xcol="scanrate", ycol="j A/cm2"):
-    _lindict = {}
-    # _x, _y = gr[xcol], gr[ycol]
-    _lin = linregress(x, y)
-    _ymod = x * _lin.slope + _lin.intercept
-    _rmsd = np.sqrt((y - _ymod) ** 2)
-    Z = zscore(abs(y))
-    # !!! Optional, build in slice by Zscore before fitting...
-    linfit_pars = {f"lin_{k}": getattr(_lin, k) for k in _lin._fields}
-    linfit_data = {
-        "data_x": x,
-        "data_y": y,
-        "lin_mod_y": _ymod,
-        "lin_rmsd": _rmsd,
-        "lin_zscore_y": Z,
-    }
-    return linfit_pars, linfit_data
-
-
 def check_for_linear_baseline_correction_of_Cdl_values(Cdl_pars) -> pd.DataFrame:
     """takes a linear fit over the Cdl values and substracts it as baseline correction"""
     _swplst = []
@@ -262,9 +228,7 @@ def prepare_Cdl_frame(
     """
     # Loop over Sweep Types
     _results = []
-    for (sr, swpname), swpgrp in N2_scans.query("scanrate > 0").groupby(
-        ["scanrate", "SweepType"]
-    ):
+    for (sr, swpname), swpgrp in N2_scans.groupby(["scanrate", "SweepType"]):
 
         if swpname == ("chrono", "NA"):
             # skip these sweep types
@@ -291,24 +255,30 @@ def prepare_Cdl_frame(
     return Cdl_data
 
 
-def check_if_last_segment_is_normal(N2sr: pd.DataFrame) -> pd.DataFrame:
+def check_if_last_segment_is_normal(
+    N2sr: pd.DataFrame,
+    current_density_key: str = "j_A_cm2",
+    segment_key="Segment #",
+) -> pd.DataFrame:
     """checks if the scan of the last segment is "normal" similar to the other scans at the same scan rate"""
-    uniq_segs = N2sr["Segment #"].unique()
-    nuniq_segs = N2sr["Segment #"].nunique()
+    uniq_segs = N2sr[segment_key].unique()
+    nuniq_segs = N2sr[segment_key].nunique()
     if nuniq_segs > 1:
         _N2sr_DF_out = pd.DataFrame()
         _idx = -1
         while _N2sr_DF_out.empty and abs(_idx) < nuniq_segs:
             _lastsegs = uniq_segs[-(nuniq_segs - int(nuniq_segs * 0.8)) :]
             _N2sr_segs = N2sr.loc[
-                N2sr["Segment #"].isin(_lastsegs),
+                N2sr[segment_key].isin(_lastsegs),
             ]
-            _minmean = _N2sr_segs.groupby("Segment #").agg("j_mA_cm2").min().mean()
+            _minmean = (
+                _N2sr_segs.groupby(segment_key).agg(current_density_key).min().mean()
+            )
 
             _N2sr_test = N2sr.loc[
-                N2sr["Segment #"] == uniq_segs[_idx],
+                N2sr[segment_key] == uniq_segs[_idx],
             ]
-            _last_mmn = _N2sr_test["j_mA_cm2"].min().mean()
+            _last_mmn = _N2sr_test[current_density_key].min().mean()
             _dev_perc = 100 * (_minmean - _last_mmn) / _minmean
             #                            print(f'{_dev_perc}')
             if abs(_dev_perc) < 25:
@@ -317,6 +287,6 @@ def check_if_last_segment_is_normal(N2sr: pd.DataFrame) -> pd.DataFrame:
                 _idx -= 1
     else:
         _N2sr_DF_out = N2sr.loc[
-            N2sr["Segment #"] == uniq_segs[0],
+            N2sr[segment_key] == uniq_segs[0],
         ]
     return _N2sr_DF_out
