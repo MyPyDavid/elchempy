@@ -18,11 +18,8 @@ import elchempy
 
 from elchempy.dataloaders.fetcher import ElChemData
 
-# from elchempy.experiments.N2.background_scan import (
-#     contains_background_scan,
-#     get_N2_background_data,
-# )
 from elchempy.experiments.N2.calculations import N2_Cdl_calculation
+from elchempy.experiments.N2.background_scan import get_N2_background_data
 
 from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
 
@@ -37,7 +34,7 @@ EvRHE = "E_vs_RHE"
 #%%
 
 
-class N2_analysis(ElChemData):
+class N2_Analysis(ElChemData):
     """
     Inherits from ElChemData,
     performs the steps for the N2 analysis on data of a file
@@ -50,9 +47,9 @@ class N2_analysis(ElChemData):
         # self.data = None
         super().__init__(filepath, **kwargs)
 
-        self.N2_CVs = N2_analysis.select_data(self.data)
+        self.N2_CVs = N2_Analysis.select_data(self.data)
 
-        Cdl_pars, Cdl_data = N2_Cdl_calculations(self.N2_CVs, EvRHE=EvRHE)
+        Cdl_pars, Cdl_data = N2_Cdl_calculation(self.N2_CVs, EvRHE=EvRHE)
         self.Cdl_pars, self.Cdl_data = Cdl_pars, Cdl_data
 
         self.N2_BG = get_N2_background_data(self.N2_CVs)

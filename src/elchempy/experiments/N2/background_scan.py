@@ -31,7 +31,9 @@ EvRHE = "E_vs_RHE"
 #%%
 
 
-def contains_background_scan(N2_CVs, maximum_scanrate=0.011, scan_length=2000):
+def select_background_scan_segments(
+    N2_CVs, maximum_scanrate=0.011, scan_length=1950, segment_key="Segment #"
+):
     """checks if the data possibly contains a N2 background scan"""
 
     if not isinstance(N2_CVs, pd.DataFrame):
@@ -40,51 +42,55 @@ def contains_background_scan(N2_CVs, maximum_scanrate=0.011, scan_length=2000):
     if N2_CVs.empty:
         return False
 
-    sr_min = N2_CVs.scanrate.min()
+    sr_min = np.min([i for i in N2_CVs.scanrate.unique() if i > 0])
 
     if not (0 < sr_min <= maximum_scanrate):  # check presence of slow scanrates
+        logger.debug("Minimum scanrate in data is larger than max or 0")
         return False
 
     sr_grp_min = N2_CVs.loc[N2_CVs.scanrate == sr_min]
-    if len(sr_grp_min) < scan_length:
+    # if len(sr_grp_min) < scan_length:
+    #     logger.debug('Data selected at minimum scan rate is too short')
+    #     return False
+    BG_segment_options = [
+        n
+        for n, gr in sr_grp_min.groupby(segment_key)
+        if (len(gr) < scan_length * 1.2 and len(gr) > scan_length * 0.8)
+    ]
+
+    if not BG_segment_options:
+        logger.debug("Data selected at minimum scan rate is too short")
         return False
 
-    if not any(
-        [n for n, gr in sr_grp_min.groupby("Segment #") if len(gr) == scan_length]
-    ):
-        return False
-
-    return True
+    return BG_segment_options
 
 
-def get_N2_background_data(N2_CVs):
+def get_N2_background_data(N2_CVs, segment_key="Segment #"):
 
-    if not contains_background_scan(N2_CVs):
+    BG_segment_options = select_background_scan_segments(N2_CVs)
+
+    if not BG_segment_options:
         return None
+    else:
+        BG_segment = BG_segment_options[-1]
+        BG_scan = N2_CVs.loc[N2_CVs[segment_key] == BG_segment]
+        return BG_scan
+
     #            N2_scan = grA.get_group(('N2','Cyclic Voltammetry (Multiple Cycles)','0.1'))
     ### === Prepare the background N2 scan (10 mV/s) for ORR with exactly 2000 rows === ###
-    preN2_scan = N2_CVs.drop_duplicates()
 
+
+def _depr_background_scan():
     sr_min = N2_CVs.scanrate.min()
     srgrpby = N2_CVs.groupby("scanrate")
-    sr_grp_min = N2_CVs.loc[N2_CVs.scanrate == sr_min]
-    # srgrpby.get_group
 
-    if sr_min > 0.01:
-        N2_factor = sr_min / 0.01
-        N2_scan = preN2_scan.assign(
-            **{"j_normalized_to_10mVs": preN2_scan.loc[:, "j A/cm2"] / N2_factor}
-        )
-        logger.warning(f"N2 scans minimun scanrate is larger than 10 mV/s")
-    #                N2_scan.loc[:,'j A/cm2'] = N2_scan['j A/cm2']/N2_factor
-    #                pd.DataFrame([ScanRates.min()])
     try:
         # lenpreN2 = len(preN2_scan)
         # N2_scan = preN2_scan
-        if len(sr_grp_min) > 2001:
+        if len(BG_scan) > 2001:
             logger.warning("!! N2 scan more than 2000 data points.. ")
             """
-            select scan with multiple steps: # TODO
+                select scan with multiple steps: # TODO
                 take only scans from length 2000, these are "good" measurements
                 take the last from multiple segments
                 analyze the current and potential values
@@ -152,3 +158,18 @@ def get_N2_background_data(N2_CVs):
         N2_scan = preN2_scan
     if N2_scan.empty:
         logger.warning("!! N2 background is Empty!! {0}".format(N2_FileName))
+
+
+def manipulate_current_if_scan_is_missing(N2_CVs):
+    """last resort option in order to retrieve a valid BG scan from data"""
+
+    sr_min = np.min([i for i in N2_CVs.scanrate.unique() if i > 0])
+
+    if sr_min > 0.01:
+        N2_factor = sr_min / 0.01
+        N2_scan = preN2_scan.assign(
+            **{"j_normalized_to_10mVs": preN2_scan.loc[:, "j A/cm2"] / N2_factor}
+        )
+        logger.warning(f"N2 scans minimun scanrate is larger than 10 mV/s")
+    #                N2_scan.loc[:,'j A/cm2'] = N2_scan['j A/cm2']/N2_factor
+    #                pd.DataFrame([ScanRates.min()])
