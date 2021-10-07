@@ -32,8 +32,8 @@ def get_starttime_from_parser(parser, source=False) -> Tuple[datetime.datetime, 
     return start_time, source
 
 
-def cast_parser_to_dataframe(parser):
-    """takes the parser and returns DataFrames from the metadata, actions and data of the files"""
+def cast_parser_to_dict_of_dataframes(parser):
+    """takes the parser and returns a Dictionary of DataFrames from the metadata, actions and data of the files"""
     metadata, actions, data = None, None, None
     pm_dict, pa_dict, data_dict = {}, {}, {}
 
@@ -67,7 +67,11 @@ def cast_parser_to_dataframe(parser):
             if parser.data_body[dbkey]:
                 pdb_dict = parser.data_body[dbkey].copy()
                 # data_dict = {**data_dict, **pdb_dict}
-                df = pd.DataFrame(data=pdb_dict, columns=parser.data_keys)
+                if pdb_dict and parser.data_keys:
+                    df = pd.DataFrame(data=pdb_dict, columns=parser.data_keys)
+                else:
+                    df = pd.DataFrame()
+
                 if len(p_db_keys) > 1:
                     df = df.assign(**{"parser_data_body_key": dbkey})
                 _data_lst.append(df)

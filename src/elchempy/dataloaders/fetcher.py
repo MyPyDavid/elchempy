@@ -19,25 +19,6 @@ from elchempy.dataloaders.assigners import assign_all_EC_relevant_columns
 
 
 #%%
-def _dev():
-    from elchempy.experiments._dev_datafiles._dev_fetcher import (
-        get_files,
-        _dev_test_read,
-    )
-
-    N2fls = get_files("N2")
-
-    try:
-        ecd = ElChemData(N2fls[0].with_suffix(".noname"))
-        ba = ElChemData("a")
-    except FileNotFoundError:
-        pass
-    except Exception as ex:
-        print("unexpected error", ex)
-        raise ex from ex
-
-    ecd = ElChemData(N2fls[1])
-    self = ecd
 
 
 class ElChemData:

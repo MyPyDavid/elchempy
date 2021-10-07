@@ -35,16 +35,20 @@ EvRHE = "E_vs_RHE"
 
 def N2_Cdl_calculation(
     N2_CVs: pd.DataFrame,
-    EvRHE: str,
     current_density_key: str = "j_A_cm2",
     potential_key: str = EvRHE,
+    make_baseline_corr=True,
 ):
     """performs the calculations for the capacity (double layer) on the data"""
 
     if N2_CVs.empty:
-        return None
+        return None, None
 
     scanrates = [i for i in N2_CVs.scanrate.unique() if i > 0]
+
+    if len(scanrates) < 2:
+        logger.debug("Insufficient data, scan rates, for Cdl calculation")
+        return None, None
 
     srgrpby = N2_CVs.groupby("scanrate")
 
@@ -81,7 +85,6 @@ def N2_Cdl_calculation(
         Resmean = Cdl_data.groupby([EvRHE, "SweepType"]).mean()
         # Resmean = Resmean.query("lin_rmsd < 1E-3 & lin_zscore_y < -0.5")
 
-    make_baseline_corr = True
     if make_baseline_corr:
         Cdl_pars = check_for_linear_baseline_correction_of_Cdl_values(Cdl_pars)
 
@@ -195,7 +198,12 @@ def check_for_linear_baseline_correction_of_Cdl_values(Cdl_pars) -> pd.DataFrame
             swpgrp["lin_slope"] - lin_baseline_model + swpgrp["lin_slope"].mean()
         )
 
-        swpgrp = swpgrp.assign(**{"lin_slope_baseline_corr": lin_slope_baseline_corr})
+        swpgrp = swpgrp.assign(
+            **{
+                "lin_slope_baseline_corr": lin_slope_baseline_corr,
+                "lin_baseline_slope": lin_baseline.slope,
+            }
+        )
         _swplst.append(swpgrp)
     Cdl_data = pd.concat(_swplst)
     return Cdl_data

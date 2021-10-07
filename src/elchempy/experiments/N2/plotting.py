@@ -29,21 +29,31 @@ def N2_plot_raw_scans_scanrate(raw_data, EvRHE="E_vs_RHE", savepath=None):
         return
 
 
-def N2_plot_Cdl_sweeptype_scatter(
-    SampleID, ScanRates, Cdl_fit, Cdl_cath_slice, Cdl_an_slice, N2_dest_dir, N2_fn
-):
+def N2_plot_Cdl_sweeptype_scatter(Cdl_pars, **kwargs):
+    # SampleID, ScanRates, Cdl_fit, Cdl_cath_slice, Cdl_an_slice, N2_dest_dir, N2_fn
+
     EvRHE = "E_AppV_RHE"
     fig, ax = plt.subplots()
+
+    Cdl_cath_slice = Cdl_pars.query('SweepType == "cathodic"')
+    Cdl_an_slice = Cdl_pars.query('SweepType == "anodic"')
+
     plt.title(
         "%s made with linear fit of\n %s (R=%.3f)"
-        % (SampleID, ScanRates, Cdl_fit["Cdl_R"].mean())
+        % (
+            kwargs.get("SampleID"),
+            kwargs.get("scanrates"),
+            Cdl_pars["lin_rvalue"].mean(),
+        )
     )
+
+    ylim = (0, 1.2 * Cdl_pars.Cdl.max())
 
     Cdl_cath_slice.plot(
         x=EvRHE,
         y="Cdl_corr",
         kind="scatter",
-        ylim=(0, 1.2 * Cdl_fit.Cdl.max()),
+        ylim=ylim,
         color="orange",
         ax=ax,
         label="Cdl_Cath_corr",
@@ -52,7 +62,7 @@ def N2_plot_Cdl_sweeptype_scatter(
         x=EvRHE,
         y="Cdl",
         kind="scatter",
-        ylim=(0, 1.2 * Cdl_fit.Cdl.max()),
+        ylim=ylim,
         color="r",
         ax=ax,
         label="Cdl_Cath",
@@ -61,7 +71,7 @@ def N2_plot_Cdl_sweeptype_scatter(
         x=EvRHE,
         y="Cdl_corr",
         kind="scatter",
-        ylim=(0, 1.2 * Cdl_fit.Cdl.max()),
+        ylim=ylim,
         color="c",
         ax=ax,
         label="Cdl_Anod_corr",
@@ -70,14 +80,17 @@ def N2_plot_Cdl_sweeptype_scatter(
         x=EvRHE,
         y="Cdl",
         kind="scatter",
-        ylim=(0, 1.2 * Cdl_fit.Cdl.max()),
+        ylim=ylim,
         ax=ax,
         label="Cdl_Anod",
     )
 
-    plt.savefig(N2_dest_dir.joinpath(f"Cdl_{N2_fn}.png"), dpi=100, bbox_inches="tight")
-    pd.concat([Cdl_an_slice, Cdl_cath_slice], sort=False, axis=0).to_csv(
-        N2_dest_dir.joinpath(f"Cdl_FIT_{N2_fn}.csv")
-    )
-    logger.info(f"Cdl fit saved to: Cdl_FIT_{N2_fn}.csv")
+    if kwargs.get("savepath"):
+        plt.savefig(
+            N2_dest_dir.joinpath(f"Cdl_{N2_fn}.png"), dpi=100, bbox_inches="tight"
+        )
+        pd.concat([Cdl_an_slice, Cdl_cath_slice], sort=False, axis=0).to_csv(
+            N2_dest_dir.joinpath(f"Cdl_FIT_{N2_fn}.csv")
+        )
+        logger.info(f"Cdl fit saved to: Cdl_FIT_{N2_fn}.csv")
     plt.close()

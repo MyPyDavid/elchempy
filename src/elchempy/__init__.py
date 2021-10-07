@@ -116,7 +116,9 @@ del hard_dependencies, soft_dependencies, dependency, missing_dependencies
 
 
 import elchempy
-from elchempy.api import N2_test
+
+# from elchempy.api import N2_test
+
 
 # import experiments
 # TODO main list

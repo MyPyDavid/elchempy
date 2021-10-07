@@ -14,7 +14,7 @@ from typing import Tuple
 
 def read_PAR_file(filepath: Path, break_if_line_contains="", metadata_only=False):
     """
-    Special parser for Versatstudio ".par" files
+    Special parser for VersaStudio ".par" files
 
     opens the file, cleans the lines
     initializes the Parser and feeds the data
@@ -90,7 +90,7 @@ class VersaStudioParser(HTMLParser):
 
     """
 
-    _VSP_VERSION = "0.1.0"
+    _VSP_VERSION = "0.0.1"
 
     _skipped_tags = ("dockinglayout", "dockpanel", "graph1")
 
