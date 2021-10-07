@@ -24,7 +24,7 @@ from elchempy.experiments.N2.analysis import N2_Analysis
 from elchempy.experiments.N2.background_scan import get_N2_background_data
 from elchempy.experiments.N2.calculations import N2_Cdl_calculation
 
-from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
+# from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
 
 from elchempy.experiments._dev_datafiles._dev_fetcher import (
     get_files,
@@ -32,9 +32,8 @@ from elchempy.experiments._dev_datafiles._dev_fetcher import (
 )
 
 ## 3rd party
-import numpy as np
-import pandas as pd
-from scipy.stats import linregress, zscore
+# import numpy as np
+# import pandas as pd
 
 ## constants
 EvRHE = "E_vs_RHE"
@@ -72,19 +71,27 @@ class Test_N2_Analysis(unittest.TestCase):
         datacollection = _dev_test_read(get_files(exp_type))
         return datacollection
 
-    def _test_runner():
+    def test_N2_batch(self):
 
         _results = []
-        for ecdata in get_files("N2"):
-            ecdata = N2_analysis(ecdata)
-            _results.append(ecdata)
+        for filepath in get_files("N2"):
+            n2 = N2_Analysis(filepath)
+            _results.append(n2)
         return _results
+
+
+def _plot():
+    [
+        i.N2_BG.plot(x=EvRHE, y="j_A_cm2")
+        for i in _results
+        if isinstance(i.N2_BG, pd.DataFrame)
+    ]
 
 
 def N2_runner():
     _result = []
     for fl in get_files("N2"):
-        N2res = N2_analysis(fl)
+        N2res = N2_Analysis(fl)
         _result.append(N2res)
     return _result
 

@@ -37,7 +37,7 @@ EvRHE = "E_vs_RHE"
 class N2_Analysis(ElChemData):
     """
     Inherits from ElChemData,
-    performs the steps for the N2 analysis on data of a file
+    performs the steps for the N2 analysis on data of the given filepath
 
     """
 
@@ -49,7 +49,12 @@ class N2_Analysis(ElChemData):
 
         self.N2_CVs = N2_Analysis.select_data(self.data)
 
-        Cdl_pars, Cdl_data = N2_Cdl_calculation(self.N2_CVs, EvRHE=EvRHE)
+        try:
+            Cdl_pars, Cdl_data = N2_Cdl_calculation(self.N2_CVs, potential_key=EvRHE)
+        except Exception as exc:
+            logger.warning(f"N2 Cdl calculations failed for {self.filepath}\n{exc}")
+            # raise exc from exc
+            Cdl_pars, Cdl_data = None, None
         self.Cdl_pars, self.Cdl_data = Cdl_pars, Cdl_data
 
         self.N2_BG = get_N2_background_data(self.N2_CVs)
@@ -74,8 +79,14 @@ class N2_Analysis(ElChemData):
 
     def _test_plot_Cdl(self):
 
+        if not isinstance(self.Cdl_pars, pd.DataFrame):
+            logger.warning(
+                f"Unable to Plot, N2 Analysis did not calculate the Cdl pars for {self.filepath.name}"
+            )
+            return
+
         if self.Cdl_pars.empty:
-            logger.warning(f"N2_results is empty {self.filepath.name}")
+            logger.warning(f"Unable to Plot, N2_results is empty {self.filepath.name}")
             return
 
         self.Cdl_pars.groupby("SweepType").plot(

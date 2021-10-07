@@ -2,10 +2,6 @@
 
 These functions assign new columns to an existing DataFrame that contains e.g. the raw data
 
-Created on Sat Aug 14 13:27:30 2021
-
-@author: DW
-
 
 """
 
@@ -17,6 +13,8 @@ import numpy as np
 import logging
 
 logger = logging.getLogger(__name__)
+
+#%%
 
 
 class AssignerError(Exception):

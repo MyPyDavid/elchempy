@@ -1,11 +1,10 @@
 """
-Created on Thu Jul 15 11:15:53 2021
 
-@author: DW
 """
 
 
 def get_current_density(I, surface_area=1):
+    """current to current density"""
 
     j = I / surface_area
 
@@ -13,6 +12,7 @@ def get_current_density(I, surface_area=1):
 
 
 def get_potential_vs_RE(E, reference_potential_V=0.0):
+    """potential E to E vs RE"""
 
     E_v_RE = E + reference_potential_V
 
@@ -21,6 +21,8 @@ def get_potential_vs_RE(E, reference_potential_V=0.0):
 
 def get_RPM_from_DAC_V(DAC_V, cell_number=0):
     """
+    potential DAC to RPM value
+
     Takes a potential value (DAC) in Volt and converts this value
     into the rpm speed of the rotation.
     Guesses from typical setting values.

@@ -10,9 +10,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 import elchempy
-from elchempy.dataloaders.parser import read_file
+from elchempy.dataloaders.parser import parse_file
 from elchempy.dataloaders.parser_helpers import (
-    cast_parser_to_dataframe,
+    cast_parser_to_dict_of_dataframes,
     cast_metadata_to_flat_dict,
     get_starttime_from_parser,
 )
@@ -60,13 +60,13 @@ class DataReader:
 
         self.parser = None
         # Call the method read_file
-        self.parser = read_file(self.filepath, metadata_only=self._metadata_only)
+        self.parser = parse_file(self.filepath, metadata_only=self._metadata_only)
 
         metadata = pd.DataFrame()
         actions = pd.DataFrame()
         data = pd.DataFrame()
 
-        parser_dict = cast_parser_to_dataframe(self.parser)
+        parser_dict = cast_parser_to_dict_of_dataframes(self.parser)
         self.parser_dict = parser_dict
 
         # metadata, actions, data = _frames

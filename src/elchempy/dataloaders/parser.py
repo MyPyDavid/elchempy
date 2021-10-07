@@ -16,7 +16,7 @@ class ParserError(ValueError):
     """unable to parse this file"""
 
 
-def read_file(filepath: Path, metadata_only=False):
+def parse_file(filepath: Path, metadata_only=False):
     """
     Parameters
     ----------
@@ -27,10 +27,7 @@ def read_file(filepath: Path, metadata_only=False):
     -------
     parser_instance : object
         instance of parser
-    actions : pd.DataFrame
-        actions table
-    data : pd.DataFrame
-        data table
+
     """
 
     parser = None
