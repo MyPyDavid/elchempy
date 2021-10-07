@@ -13,7 +13,11 @@ For this to work, the package should be cloned and installed in editable mode.
 
 ``` python
 import elchempy
-N2_scans = elchempy.N2_test()
+from elchempy.api import N2_testrun
+N2_scans = N2_testrun()
+# inline plotting multiple figures
+[i._test_plot_scanrates() for i in N2_scans]
+[i._test_plot_Cdl() for i in N2_scans]
 ```
 
 
