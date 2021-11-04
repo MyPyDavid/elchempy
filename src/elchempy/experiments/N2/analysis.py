@@ -24,9 +24,7 @@ from elchempy.experiments.N2.background_scan import get_N2_background_data
 from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
 
 ## 3rd party
-import numpy as np
 import pandas as pd
-from scipy.stats import linregress, zscore
 
 ## constants
 EvRHE = "E_vs_RHE"
@@ -77,7 +75,7 @@ class N2_Analysis(ElChemData):
 
         return N2_CVs
 
-    def _test_plot_Cdl(self):
+    def plot_Cdl(self):
 
         if not isinstance(self.Cdl_pars, pd.DataFrame):
             logger.warning(
@@ -93,7 +91,7 @@ class N2_Analysis(ElChemData):
             x="E_vs_RHE", y="lin_slope", kind="scatter"
         )
 
-    def _test_plot_scanrates(self):
+    def plot_scanrates(self):
 
         if self.N2_CVs.empty:
             logger.warning(f"N2_results is empty {self.filepath.name}")

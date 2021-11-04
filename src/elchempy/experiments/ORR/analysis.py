@@ -32,6 +32,7 @@ from scipy.stats import linregress, zscore
 EvRHE = "E_vs_RHE"
 
 #%%
+def _dev_test_ORR_analysis():
 
 
 class ORR_Analysis(ElChemData):
@@ -40,13 +41,14 @@ class ORR_Analysis(ElChemData):
     performs the steps for the ORR analysis on data of a file
 
     Difficulties:
+        Information from other files is required for processing,
         there should be a N2 background scan in another file in same folder
 
         there can be a RRDE measurement with Disk and Ring files, which
         need to be merged on Elapsed Time for the calculations
 
     Steps:
-        N2 file: look in folder or use from index
+        N2 background file: look in folder or get file from argument (from index)
 
     """
 
@@ -58,7 +60,7 @@ class ORR_Analysis(ElChemData):
         # self.data = None
         super().__init__(filepath, **kwargs)
 
-        self.N2_CVs = N2_Analysis.select_data(self.data)
+        self.ORR = self.select_data(self.data)
 
         try:
             Cdl_pars, Cdl_data = N2_Cdl_calculation(self.N2_CVs, potential_key=EvRHE)
@@ -72,8 +74,7 @@ class ORR_Analysis(ElChemData):
         # N2_results = N2_Results(N2_CVs, Cdl_pars, Cdl_data, N2_BG)
         # self.N2_results = N2_analysis.get_N2_analysis_results(self.N2_CVs)
 
-    @staticmethod
-    def select_data(data):
+    def select_data(self, data):
         # FIXME Select only CV types from Data segment
         # Select the data for N2 Cyclic Voltammograms
         try:
