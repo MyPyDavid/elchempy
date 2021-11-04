@@ -1,0 +1,7 @@
+### Ignore some local files for developing -DW ###
+*_onlylocal_*.py
+src/**/_bak_*.py
+src/**/_old_*.py
+src/**/_depr_*.py
+src/**/_dev_*.py
+*__pycache__*
