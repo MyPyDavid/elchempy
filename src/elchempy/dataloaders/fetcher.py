@@ -79,6 +79,9 @@ class ElChemData:
                 )
         self.methods = []
 
+        # in case of multiple inheritance subclass
+        super().__init__()
+
     @property
     def filepath(self) -> Union[Path, str]:
         return self._filepath

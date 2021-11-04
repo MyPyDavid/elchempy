@@ -2,15 +2,6 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=vim,venv,pydev,linux,macos,flask,dotenv,django,direnv,python,windows,virtualenv,pycharm+all,visualstudio,jupyternotebooks,visualstudiocode
 
 
-### Ignore some local files for developing -DW ###
-*_onlylocal_*.py
-src/**/_bak_*.py
-src/**/_old_*.py
-src/**/_depr_*.py
-src/**/_dev_*.py
-*__pycache__*
-
-
 
 ### direnv ###
 .direnv

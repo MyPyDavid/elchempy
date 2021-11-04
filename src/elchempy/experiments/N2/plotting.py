@@ -24,7 +24,7 @@ def N2_plot_raw_scans_scanrate(raw_data, EvRHE="E_vs_RHE", savepath=None):
     ax.set_ylabel("$j \//\/mA/cm^{2}$")
     ax.set_xlabel("$E \//\/V_{RHE}$")
     if savepath:
-        plt.savefig(_savepath, dpi=100, bbox_inches="tight")
+        plt.savefig(savepath, dpi=100, bbox_inches="tight")
         plt.close()
         return
 
