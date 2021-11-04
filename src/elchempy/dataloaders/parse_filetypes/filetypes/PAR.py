@@ -1,5 +1,5 @@
 """
-Specific parser for .par files from VersaStudio
+Specific parser for .par files as obtained from VersaStudio
 """
 
 
@@ -36,9 +36,9 @@ def read_PAR_file(filepath: Path, break_if_line_contains="", metadata_only=False
             else:
                 fp_readlines = fp.readlines()
         fp_read = find_replace_line_endings(fp_readlines)
-    except OSError:
-        raise ParserError(
-            f"Can not open or read this file" "File: {filepath} is invalid."
+    except OSError as exc:
+        raise exc(
+            f"Can not open or read this file,\nFile: {filepath} is invalid."
         )
 
     VSP = VersaStudioParser()

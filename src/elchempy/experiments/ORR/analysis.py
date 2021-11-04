@@ -18,21 +18,22 @@ import elchempy
 
 from elchempy.dataloaders.fetcher import ElChemData
 
-from elchempy.experiments.N2.calculations import N2_Cdl_calculation
-from elchempy.experiments.N2.background_scan import get_N2_background_data
-
-from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
+from elchempy.experiments.ORR.helpers import get_file_from_secondary_electrode
+# from elchempy.experiments.N2.background_scan import get_N2_background_data
+# from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
+from elchempy import EvRHE
 
 ## 3rd party
 import numpy as np
 import pandas as pd
 from scipy.stats import linregress, zscore
 
-## constants
-EvRHE = "E_vs_RHE"
+
 
 #%%
 def _dev_test_ORR_analysis():
+    ''' function for testing'''
+    
 
 
 class ORR_Analysis(ElChemData):
@@ -53,17 +54,24 @@ class ORR_Analysis(ElChemData):
     """
 
     def __init__(
-        self, filepath: [Path, str], ring_file=None, N2_background=None ** kwargs
+        self, filepath: [Path, str], ring_file=None, N2_background=None, **kwargs
     ):
         # self.filepath = Path(filepath, **kwargs)
         # self.kwargs = kwargs
         # self.data = None
         super().__init__(filepath, **kwargs)
+        
+        self.ring_data = None
+        if not ring_file:
+            self.ring_data = ElChemData(ring_file, **kwargs)
+            
+              
+        
 
         self.ORR = self.select_data(self.data)
 
         try:
-            Cdl_pars, Cdl_data = N2_Cdl_calculation(self.N2_CVs, potential_key=EvRHE)
+            Cdl_pars, Cdl_data = N2_Cdl_calculation(self.ORR, potential_key=EvRHE)
         except Exception as exc:
             logger.error(f"N2 Cdl calculations failed for {self.filepath}\n{exc}")
             # raise exc from exc

@@ -18,8 +18,9 @@ def get_starttime_from_parser(parser, source=False) -> Tuple[datetime.datetime, 
 
     start_time = None
     source = ""
+    parser_name = parser.__class__.__qualname__
 
-    if "VersaStudioParser" in parser.__class__.__qualname__:
+    if "VersaStudioParser" in parser_name :
         # isinstance(parser, VersaStudioParser):
         # cast metadata from parser into DataFrame
         time = parser.metadata.get("experiment", {}).get("TimeAcquired", "")
@@ -28,6 +29,8 @@ def get_starttime_from_parser(parser, source=False) -> Tuple[datetime.datetime, 
         dates = list(datefinder.find_dates(date_time, source=True))
         if len(dates) == 1:
             start_time, source = dates[0]
+    else:
+        raise NotImplementedError(f'Parser with name {parser_name} is not implemented')
 
     return start_time, source
 

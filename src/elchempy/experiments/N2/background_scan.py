@@ -31,6 +31,18 @@ EvRHE = "E_vs_RHE"
 #%%
 
 
+def get_N2_background_data(N2_CVs, segment_key="Segment #"):
+
+    BG_segment_options = select_background_scan_segments(N2_CVs)
+
+    if not BG_segment_options:
+        return None
+    else:
+        BG_segment = BG_segment_options[-1]
+        BG_scan = N2_CVs.loc[N2_CVs[segment_key] == BG_segment]
+        return BG_scan
+
+
 def select_background_scan_segments(
     N2_CVs, maximum_scanrate=0.011, scan_length=1950, segment_key="Segment #"
 ):
@@ -65,18 +77,6 @@ def select_background_scan_segments(
     return BG_segment_options
 
 
-def get_N2_background_data(N2_CVs, segment_key="Segment #"):
-
-    BG_segment_options = select_background_scan_segments(N2_CVs)
-
-    if not BG_segment_options:
-        return None
-    else:
-        BG_segment = BG_segment_options[-1]
-        BG_scan = N2_CVs.loc[N2_CVs[segment_key] == BG_segment]
-        return BG_scan
-
-
 def _optional_manipulate_current_if_scan_is_missing(N2_CVs):
     """last resort option in order to retrieve a valid BG scan from data"""
 
@@ -84,8 +84,8 @@ def _optional_manipulate_current_if_scan_is_missing(N2_CVs):
 
     if sr_min > 0.01:
         N2_factor = sr_min / 0.01
-        N2_scan = preN2_scan.assign(
-            **{"j_normalized_to_10mVs": preN2_scan.loc[:, "j A/cm2"] / N2_factor}
+        N2_scan = N2_CVs.assign(
+            **{"j_normalized_to_10mVs": N2_CVs.loc[:, "j A/cm2"] / N2_factor}
         )
         logger.warning(f"N2 scans minimun scanrate is larger than 10 mV/s")
     #                N2_scan.loc[:,'j A/cm2'] = N2_scan['j A/cm2']/N2_factor

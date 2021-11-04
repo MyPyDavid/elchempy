@@ -10,8 +10,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 import elchempy
-from elchempy.dataloaders.parser import parse_file
-from elchempy.dataloaders.parser_helpers import (
+from elchempy.dataloaders.parse_filetypes.parser import parse_file
+from elchempy.dataloaders.parse_filetypes.parser_helpers import (
     cast_parser_to_dict_of_dataframes,
     cast_metadata_to_flat_dict,
     get_starttime_from_parser,

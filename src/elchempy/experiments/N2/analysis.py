@@ -55,6 +55,7 @@ class N2_Analysis(ElChemData):
             Cdl_pars, Cdl_data = None, None
         self.Cdl_pars, self.Cdl_data = Cdl_pars, Cdl_data
 
+
         self.N2_BG = get_N2_background_data(self.N2_CVs)
         # N2_results = N2_Results(N2_CVs, Cdl_pars, Cdl_data, N2_BG)
         # self.N2_results = N2_analysis.get_N2_analysis_results(self.N2_CVs)

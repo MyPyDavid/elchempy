@@ -5,7 +5,7 @@ Parsers for the experimental data files
 # import datetime
 from pathlib import Path
 
-from elchempy.dataloaders.parsers_filetypes.PAR_file import read_PAR_file
+from elchempy.dataloaders.parse_filetypes.filetypes.PAR import read_PAR_file
 
 # 3rd party
 # import datefinder

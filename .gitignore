@@ -5,6 +5,7 @@
 *_onlylocal_*.py
 src/**/_bak_*.py
 src/**/_old_*.py
+src/**/_depr_*.py
 
 
 
