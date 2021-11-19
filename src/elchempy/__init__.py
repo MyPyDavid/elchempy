@@ -119,7 +119,7 @@ import elchempy
 
 # from elchempy.api import N2_test
 ## constants
-EvRHE = "E_vs_RHE"
+# EvRHE = "E_vs_RHE"
 
 # import experiments
 # TODO main list

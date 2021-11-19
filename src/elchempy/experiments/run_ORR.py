@@ -35,30 +35,7 @@ _logger = logging.getLogger(__name__)
 
 Meta = namedtuple("Meta", "PAR_file data ovv N2_BG_f N2_BG_data")
 
-globals()["EvRHE"] = "E_AppV_RHE"
 # class ORR_scan_data():
-
-
-def N2_BG_exclusion_list(ovv_N2_bg_file):
-    _topdir = "/mnt/DATA/EKTS_CloudStation/CloudStation/Experimental data/Organized_Data/VERSASTAT"
-    _N2_excluded = {
-        "/2019-01-Jan/25.01.2019_0.1MH2SO4_cell2/N2_scans_v30/N2_20cls_300_100_10_JOS4_256_BG.pkl":
-        #                    '2019-01-Jan/25.01.2019_0.1MH2SO4_cell3/N2_scans_v30/N2_20cls_300_100_10_JOS4_postAST-LC_256_BG.pkl',
-        "/2019-01-Jan/24.01.2019_0.1MH2SO4_24490_cell3/N2_scans_v30/N2_20cls_300_100_10_JOS4_270_BG.pkl",
-        "/2019-01-Jan/25.01.2019_0.1MH2SO4_cell2/N2_scans_v30/N2_20cls_300_100_10_JOS4_256_fail_BG.pkl": "2019-01-Jan/24.01.2019_0.1MH2SO4_24490_cell3/N2_scans_v30/N2_20cls_300_100_10_JOS4_270_BG.pkl",
-    }
-    _ovv_N2_gr_file_split = str(ovv_N2_bg_file).split("VERSASTAT")[-1]
-
-    if (
-        _ovv_N2_gr_file_split in _N2_excluded.keys() and 1 == 1
-    ):  # TODO switched off, remove 1==2
-        print("JOS4 look for alternative N2_BG files")
-        replaced_ovv_N2_bg_file = Path(_topdir).joinpath(
-            _N2_excluded.get(_ovv_N2_gr_file_split)
-        )
-        return replaced_ovv_N2_bg_file
-    else:
-        return ovv_N2_bg_file
 
 
 @dataclass(order=True, frozen=False)

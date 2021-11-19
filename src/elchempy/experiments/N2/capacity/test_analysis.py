@@ -5,9 +5,9 @@ this module calculates the Cdl from Cyclic Voltammetries measured in N2 at sever
 """
 
 ## std lib
-from typing import NamedTuple, Tuple, Dict
-from collections import namedtuple
-from pathlib import Path
+# from typing import NamedTuple, Tuple, Dict
+# from collections import namedtuple
+# from pathlib import Path
 
 import logging
 
@@ -17,12 +17,13 @@ import unittest
 import pytest
 
 ## local
-import elchempy
+# import elchempy
 
 # from elchempy.dataloaders.fetcher import ElChemData
-from elchempy.experiments.N2.analysis import N2_Analysis
-from elchempy.experiments.N2.background_scan import get_N2_background_data
-from elchempy.experiments.N2.calculations import N2_Cdl_calculation
+from elchempy.experiments.N2.capacity.analysis import N2_Analysis
+
+# from elchempy.experiments.N2.background_scan import get_N2_background_data
+from elchempy.experiments.N2.capacity.calculations import N2_Cdl_calculation
 
 # from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
 
@@ -64,21 +65,21 @@ class Test_N2_Analysis(unittest.TestCase):
         cdl050_mean = cdl050["lin_slope"].mean()
         self.assertEqual(cdl050_mean, 0.0001221518868503618)
 
-    def test_BG_scan(self):
-        self.assertEqual(27, self.n2.N2_BG["Segment #"].unique()[0])
+    # def test_BG_scan(self):
+    #     self.assertEqual(27, self.n2.N2_BG["Segment #"].unique()[0])
 
-    def _test_data(exp_type: str):
+    # def _test_data(exp_type: str):
 
-        datacollection = _dev_test_read(get_files(exp_type))
-        return datacollection
+    #     datacollection = _dev_test_read(get_files(exp_type))
+    #     return datacollection
 
-    def test_N2_batch(self):
+    # def test_N2_batch(self):
 
-        _results = []
-        for filepath in get_files("N2"):
-            n2 = N2_Analysis(filepath)
-            _results.append(n2)
-        return _results
+    #     _results = []
+    #     for filepath in get_files("N2"):
+    #         n2 = N2_Analysis(filepath)
+    #         _results.append(n2)
+    #     return _results
 
 
 def _plot():

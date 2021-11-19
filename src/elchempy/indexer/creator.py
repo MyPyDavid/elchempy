@@ -39,6 +39,8 @@ import pandas as pd
 
 
 def create_index(files, include_metadata=False, multi_run=False):
+    """creates the index from list of files, by crawling over each file"""
+
     ecpps = None
     ecpps = run_func_on_files(ElChemPathParser, files, multi_run=multi_run)
 
@@ -66,6 +68,8 @@ def create_index(files, include_metadata=False, multi_run=False):
 
 
 def merge_and_make_index_from_collections(ecpps, ecds, prefix="ecpp"):
+    """creates the index from list of files, by crawling over each file"""
+
     entries = []
     for k, val in ecpps.items():
         if not val:
@@ -95,6 +99,8 @@ def merge_and_make_index_from_collections(ecpps, ecds, prefix="ecpp"):
 
 
 def add_extra_folder_columns_to_index(files, index, to_string=True):
+    """finds a common folder of all files and adds this as a column to the index"""
+
     common_folder = find_path_of_common_folder(files)
     rel_folders = relative_parent_paths_to_common_folder(index.index, common_folder)
     if to_string:

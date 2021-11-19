@@ -7,7 +7,7 @@ Specific parser for .par files as obtained from VersaStudio
 from pathlib import Path
 from html.parser import HTMLParser
 
-from typing import Tuple
+# from typing import Tuple
 
 #%%
 
@@ -37,9 +37,7 @@ def read_PAR_file(filepath: Path, break_if_line_contains="", metadata_only=False
                 fp_readlines = fp.readlines()
         fp_read = find_replace_line_endings(fp_readlines)
     except OSError as exc:
-        raise exc(
-            f"Can not open or read this file,\nFile: {filepath} is invalid."
-        )
+        raise exc(f"Can not open or read this file,\nFile: {filepath} is invalid.")
 
     VSP = VersaStudioParser()
     VSP.feed(fp_read)
@@ -190,7 +188,7 @@ class VersaStudioParser(HTMLParser):
             if len(splt) == lenkeys:
                 try:
                     splt = [int(i) if not "." in i else float(i) for i in splt]
-                except Exception as e:
+                except Exception:
                     pass
 
                 data_body.append(splt)
@@ -247,7 +245,7 @@ class VersaStudioParser(HTMLParser):
                 textdict.update({current_tag_name: splitted_lines_dict})
             else:
                 raise ValueError
-        except Exception as e:
+        except Exception:
             pass
             # print(f'parsemeta error for {current_tag} {e}')
             # self.wronglines.update({current_tag: f'error {e},{text[0:100]}'})
@@ -275,14 +273,14 @@ def cast_elements_to_numeric(
                     if any(sep in _isnum for sep in float_sep):
                         try:
                             value = float(value)
-                        except Exception as e:
-                            # type casting to float error
+                        except Exception:
+                            # ignore type casting to float error
                             pass
                     else:
                         try:
                             value = int(value)
-                        except Exception as e:
-                            # type casting to int error
+                        except Exception:
+                            # ignore type casting to int error
                             pass
                 else:
                     # if both numeric and other characters are found in str

@@ -6,20 +6,20 @@ this module calculates the capacity (or Cdl) from Cyclic Voltammetries measured 
 
 ## std lib
 from typing import NamedTuple, Tuple, Dict
-from collections import namedtuple
-from pathlib import Path
+
+# from collections import namedtuple
+# from pathlib import Path
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 ## local
-import elchempy
 
 # from elchempy.dataloaders.fetcher import ElChemData
 # from elchempy.experiments.N2.background_scan import contains_background_scan, get_N2_background_data
 
-from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
+# from elchempy.experiments.N2.plotting import N2_plot_raw_scans_scanrate
 from elchempy.regressions.linear import linregress_residual
 
 ## 3rd party
@@ -28,7 +28,7 @@ import pandas as pd
 from scipy.stats import linregress, zscore
 
 ## constants
-EvRHE = "E_vs_RHE"
+from elchempy.constants import EvRHE  # = "E_vs_RHE"
 
 #%%
 
@@ -39,7 +39,7 @@ def N2_Cdl_calculation(
     potential_key: str = EvRHE,
     make_baseline_corr=True,
 ):
-    """performs the calculations for the capacity (double layer) on the data"""
+    """performs the calculations for the capacity (double layer) from several scanrates"""
 
     if N2_CVs.empty:
         return None, None
@@ -81,9 +81,9 @@ def N2_Cdl_calculation(
         for ycol in ["lin_slope", "lin_intercept"]:
             Cdl_pars.groupby("SweepType").plot(x=EvRHE, y=ycol)
     # Cdl_data.query("lin_zscore_y < 3")
-    if False:
-        Resmean = Cdl_data.groupby([EvRHE, "SweepType"]).mean()
-        # Resmean = Resmean.query("lin_rmsd < 1E-3 & lin_zscore_y < -0.5")
+    # if False:
+    # Resmean = Cdl_data.groupby([EvRHE, "SweepType"]).mean()
+    # Resmean = Resmean.query("lin_rmsd < 1E-3 & lin_zscore_y < -0.5")
 
     if make_baseline_corr:
         Cdl_pars = check_for_linear_baseline_correction_of_Cdl_values(Cdl_pars)

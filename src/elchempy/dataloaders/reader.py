@@ -10,8 +10,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 import elchempy
-from elchempy.dataloaders.parse_filetypes.parser import parse_file
-from elchempy.dataloaders.parse_filetypes.parser_helpers import (
+from elchempy.dataloaders.parsers.parser import SUPPORTED_FILETYPES, parse_file
+from elchempy.dataloaders.parsers.parser_helpers import (
     cast_parser_to_dict_of_dataframes,
     cast_metadata_to_flat_dict,
     get_starttime_from_parser,
@@ -31,7 +31,7 @@ class DataReader:
 
     """
 
-    supported_filetypes = [".par"]
+    supported_filetypes = SUPPORTED_FILETYPES.keys()
 
     def __init__(self, filepath: Path, max_bytesize=1 * 10 ** 10, metadata_only=False):
 
@@ -62,9 +62,9 @@ class DataReader:
         # Call the method read_file
         self.parser = parse_file(self.filepath, metadata_only=self._metadata_only)
 
-        metadata = pd.DataFrame()
-        actions = pd.DataFrame()
-        data = pd.DataFrame()
+        # metadata = pd.DataFrame()
+        # actions = pd.DataFrame()
+        # data = pd.DataFrame()
 
         parser_dict = cast_parser_to_dict_of_dataframes(self.parser)
         self.parser_dict = parser_dict

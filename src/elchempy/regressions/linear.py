@@ -27,7 +27,7 @@ import numpy as np
 from scipy.stats import linregress, zscore
 
 ## constants
-EvRHE = "E_vs_RHE"
+
 
 #%%
 
