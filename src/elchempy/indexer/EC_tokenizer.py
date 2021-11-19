@@ -19,7 +19,7 @@ from elchempy.indexer.filepath_parser import FilePathParser
 from elchempy.indexer.extra_EC_info import loading_ref, WE_surface_area_cm2
 
 ### for Developing
-from elchempy.config import LOCAL_FILES
+# from elchempy.config import LOCAL_FILES
 
 ### 3rd Party imports
 

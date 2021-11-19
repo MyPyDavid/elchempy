@@ -65,15 +65,15 @@ def assign_all_EC_relevant_columns(
         DESCRIPTION.
 
     """
-    NEW_COLUMNS = [
-        "E_AppV_RHE",
-        "j A/cm2",
-        "jmAcm-2",
-        "scanrate_calc",
-        "scanrate_prog_calc",
-        "scanrate",
-        "SweepType",
-    ]
+    # NEW_COLUMNS = [
+    #     "E_AppV_RHE",
+    #     "j A/cm2",
+    #     "jmAcm-2",
+    #     "scanrate_calc",
+    #     "scanrate_prog_calc",
+    #     "scanrate",
+    #     "SweepType",
+    # ]
 
     if not isinstance(data, pd.DataFrame):
         raise AssignerError("argument data is not of type DataFrame")
@@ -267,17 +267,6 @@ def assign_scanrate_calc(data: pd.DataFrame):
 
         notes: takes certain string values
     """
-    # DR = DataReader(filepath)
-    # segment1 = DR.data
-    # actions = DR.actions
-
-    # TODO split in separate functions !!!
-    # E_RHE_columns = self.assign_E_vs_RE(data, 1)
-
-    # current_density_columns = {
-    #     'j A/cm2': data['I(A)'] / geometric_SA,
-    #     'jmAcm-2': 1000 * data['I(A)'] / geometric_SA
-    #     }
 
     scanrate_calc_columns = {
         "scanrate_calc": np.round(
@@ -288,10 +277,6 @@ def assign_scanrate_calc(data: pd.DataFrame):
         ),
     }
 
-    # TODO split in separate functions !!!
-    # EC_important_columns = {
-    # **current_density_columns,
-    # **scanrate_calc_columns}
     data = data.assign(**scanrate_calc_columns)
     # data.scanrate_calc = data.scanrate_calc.fillna(method="backfill")
     # data.scanrate_prog_calc= data.scanrate_prog_calc.fillna(method="backfill")

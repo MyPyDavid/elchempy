@@ -1,0 +1,17 @@
+### Ignore some local files for developing -DW ###
+
+*_onlylocal_*.py
+
+/**/_bak_*.py
+
+/**/_old_*.py
+
+/**/_depr_*.py
+
+/**/_dev_*.py
+
+/**/_todo_*.py
+
+*__pycache__*
+
+/**/ipython.html

@@ -15,7 +15,8 @@ class TestN2Analysis(unittest.TestCase):
         N2_scans = N2_testrun()
 
     def _test_plots(self):
+        pass
 
         # inline plotting multiple figures
-        [i._test_plot_scanrates() for i in N2_scans]
-        [i._test_plot_Cdl() for i in N2_scans]
+        # [i.plot_scanrates() for i in N2_scans]
+        # [i.plot_Cdl() for i in N2_scans]

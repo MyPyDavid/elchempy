@@ -2,19 +2,18 @@
 Fetches data from a file and constructs the electrochemical data columns
 """
 
-from collections import namedtuple
-from dataclasses import dataclass, InitVar
+# from collections import namedtuple
+# from dataclasses import dataclass, InitVar
 
+# std lib
 from pathlib import Path
 from typing import Union
 
-import pandas as pd
-import numpy as np
+# import pandas as pd
+# import numpy as np
 
-import elchempy
+# local import
 from elchempy.dataloaders.reader import DataReader
-
-# from .converters import get_current_density, get_potential_vs_RE, get_RPM_from_DAC_V
 from elchempy.dataloaders.assigners import assign_all_EC_relevant_columns
 
 
@@ -24,7 +23,7 @@ from elchempy.dataloaders.assigners import assign_all_EC_relevant_columns
 class ElChemData:
     """
 
-    Parses the data from a .PAR file into relevant electrochemical data.
+    Parses the data from a single file into relevant electrochemical data.
 
     Calls the DataReader on a filepath and unpacks the relevant components.
     #TODO idea; turn this Class into subclass of a DataFrame and include functionalities
@@ -35,11 +34,13 @@ class ElChemData:
 
     args_keys = ["_filepath"]
     kwargs_keys = ["_metadata_only", "_kwargs"]
-    called_class_keys = ["DR"]
+    datareader_instance_key = ["DR"]
     data_keys = ["metadata", "actions", "data", "start_time", "methods"]
     new_data_keys = ["new_EC_columns"]
 
-    __slots__ = args_keys + kwargs_keys + called_class_keys + data_keys + new_data_keys
+    __slots__ = (
+        args_keys + kwargs_keys + datareader_instance_key + data_keys + new_data_keys
+    )
 
     def __init__(
         self, filepath: Union[Path, str], metadata_only: bool = False, **kwargs
@@ -79,6 +80,9 @@ class ElChemData:
                 )
         self.methods = []
 
+        # in case of multiple inheritance subclass
+        super().__init__()
+
     @property
     def filepath(self) -> Union[Path, str]:
         return self._filepath
@@ -108,9 +112,8 @@ class ElChemData:
             return f"{self.__class__.__qualname__}()"
         _name = Path(self._filepath).name
         _txt = f"metadata={len(self.metadata)}, actions={len(self.actions)}, data={len(self.data)}"
-        _methods = f'methods={", ".join(map(str, self.methods))}'
+        # _methods = f'methods={", ".join(map(str, self.methods))}'
         return f"{self.__class__.__qualname__}: {_name}, {_txt}"
-        # return f"{self.__class__.__qualname__}('{str(self.filepath)}')"
 
     def __str__(self):
         if not self._filepath:

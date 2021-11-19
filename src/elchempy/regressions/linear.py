@@ -27,7 +27,7 @@ import numpy as np
 from scipy.stats import linregress, zscore
 
 ## constants
-EvRHE = "E_vs_RHE"
+
 
 #%%
 
@@ -85,7 +85,7 @@ def cast_in_array(arg):
     msg = f"Can not cast type({type(arg)}), {arg} in array of floats.\n"
     try:
         arr = np.array(arg)
-    except Excpetion as exc:
+    except Exception as exc:
         raise exc(msg)
 
         arr = np.array(0)

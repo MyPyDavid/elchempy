@@ -111,14 +111,6 @@ class Test_ElChemData(unittest.TestCase):
         return _results
 
 
-def _plot():
-    [
-        i.N2_BG.plot(x=EvRHE, y="j_A_cm2")
-        for i in _results
-        if isinstance(i.N2_BG, pd.DataFrame)
-    ]
-
-
 def _dev():
     self = Test_ElChemData()
     self.setUp()

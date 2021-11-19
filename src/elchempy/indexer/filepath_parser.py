@@ -40,7 +40,7 @@ class FilePathParser(Path):
             self.FP_info.update(**self.filestats)
 
     @staticmethod
-    def get_rfID_from_path(path: Path) -> str:
+    def get_fID_from_path(path: Path) -> str:
         """
         Makes the ID from a filepath
 

@@ -40,12 +40,15 @@ from pyarrow import ArrowInvalid
 #%%
 class ElChemIndex:
     """
+
+    Creates an index of files in a given folder.
+
     Collects the parsers instances for a list of files.
     Can include metadata from file instrospection or only from parsing the filename
 
     """
 
-    supported_store_types = ["feather"]
+    supported_store_types = ["feather", "sqlite"]
 
     def __init__(
         self,
@@ -86,7 +89,7 @@ class ElChemIndex:
         self.ecds = ecds
 
     def add_methods(self):
-        """for persistence and loading of this 'collection' in a database of pkl file eg"""
+        """for persistence and loading of this 'collection' in eg a database or pkl file"""
 
     def get_store_file(self, store_type="", dest_dir=None, filename="index"):
         if not (store_type and dest_dir):
@@ -142,7 +145,7 @@ class ElChemIndex:
 
 #%%
 def _dev_testing():
-    files = self._files
+    files = self.files
     ElChemPathParser(files[159])
 
 

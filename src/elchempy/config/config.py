@@ -72,7 +72,7 @@ LOCAL_FILES = list(LOCAL_DATA_DIR.rglob("*/*par"))
 
 if not LOCAL_FILES:
     logger.error(
-        f"Local data files are missing.\nIs the data folder included in the package?"
+        f"Local data files are missing.\nIs the data folder included in the package\n{LOCAL_DATA_DIR}?"
     )
 
 from file_py_helper.find_folders import FindExpFolder
